@@ -1,0 +1,23 @@
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# iOS / Android native projects (only if prebuilt)
+ios/
+android/
+
+# Editor
+.vscode/
+.idea/
+
+# Builds
+*.ipa
+*.apk
+*.aab
