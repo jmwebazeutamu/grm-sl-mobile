@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActionComposer } from '@/components/ActionComposer';
 import { Card } from '@/components/Card';
+import { DecisionBar } from '@/components/DecisionBar';
 import { SlaDot } from '@/components/SlaDot';
 import { StateBadge } from '@/components/StateBadge';
 import { stateColor } from '@/constants/states';
@@ -32,6 +34,10 @@ export default function GrievanceDetail() {
           <Text className="text-navy font-bold text-base mt-2">Unable to load case</Text>
         </View>
       ) : (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="flex-1"
+        >
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
           <View className="flex-row items-start justify-between gap-3">
             <View className="flex-1">
@@ -109,6 +115,17 @@ export default function GrievanceDetail() {
             )}
           </Card>
         </ScrollView>
+
+        {/* Decisions (review, closure) — above the free-form composer */}
+        <DecisionBar
+          grievanceId={data.id}
+          state={data.state}
+          capabilities={data.capabilities}
+        />
+
+        {/* Action composer — always present when user can update */}
+        {data.capabilities.can_edit ? <ActionComposer grievanceId={data.id} /> : null}
+        </KeyboardAvoidingView>
       )}
     </SafeAreaView>
   );

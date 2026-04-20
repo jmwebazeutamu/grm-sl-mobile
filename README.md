@@ -4,7 +4,7 @@ React Native + Expo client for the GRM system. Talks to the Laravel mobile
 API at `http://104.225.218.102:8081/api/v1/mobile` (configurable via
 `app.json` → `extra.apiBaseUrl`).
 
-## Status — Session 2 MVP
+## Status
 
 | Feature | Status |
 |---|---|
@@ -12,11 +12,13 @@ API at `http://104.225.218.102:8081/api/v1/mobile` (configurable via
 | Staff login → Sanctum token | ✅ |
 | Dashboard — org stats, recent activity | ✅ |
 | Grievances list — search, state chips, infinite scroll, pull-to-refresh | ✅ |
-| Grievance detail — overview, location, complainer, timeline | ✅ (read-only) |
+| Grievance detail — overview, location, complainer, timeline | ✅ |
+| Action composer — post actions + resolve/escalate | ✅ |
+| Decision bar — accept/reject, closure review, close, escalate | ✅ |
 | Profile — user info + sign out | ✅ |
 | Public track — by reference number | ✅ |
-| Public submit — multi-step form | ⏳ next session |
-| Action composer — post actions / transitions | ⏳ next session |
+| Public submit — multi-step form + success screen | ✅ |
+| Assign officer | ⏳ needs officers-list endpoint |
 | File uploads — camera + gallery | ⏳ next session |
 | Offline queue | ⏳ next session |
 | Push notifications | ⏳ next session |
