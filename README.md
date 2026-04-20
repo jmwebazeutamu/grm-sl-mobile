@@ -23,9 +23,42 @@ API at `http://104.225.218.102:8081/api/v1/mobile` (configurable via
 | Offline queue | ⏳ next session |
 | Push notifications | ⏳ next session |
 
-## Quick start
+## Daily workflow (after first setup)
+
+Every time you want to work on the app:
 
 ```bash
+# 1. Emulator — launch from Android Studio → Device Manager → ▶
+#    Wait for the home screen to appear.
+
+# 2. Verify the emulator is online
+adb devices
+# should print: emulator-5554   device
+
+# 3. Pull the latest code
+cd ~/grm-sl-mobile
+git pull
+
+# 4. Start the Expo dev server
+npx expo start
+
+# 5. Press 'a' in the Expo terminal to open on the emulator
+```
+
+If `adb` says `device offline`, wait 15s and re-run. If Expo complains about
+a missing development build, rebuild once:
+
+```bash
+npx expo run:android
+```
+
+Then you're back to `expo start` + `a` for subsequent days.
+
+## First-time setup
+
+```bash
+git clone git@github.com:jmwebazeutamu/grm-sl-mobile.git
+cd grm-sl-mobile
 npm install
 npx expo prebuild --clean   # regenerates android/ + ios/
 npx expo run:android        # or run:ios
