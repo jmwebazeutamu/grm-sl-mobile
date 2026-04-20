@@ -10,7 +10,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0f2044"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "sl.gov.grm.mobile"
@@ -33,7 +35,12 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiBaseUrl": "http://104.225.218.102:8081/api/v1/mobile"
-    }
+      "apiBaseUrl": "https://grm-sl.quasar.ug/api/v1/mobile",
+      "router": {},
+      "eas": {
+        "projectId": "3a293e05-65aa-4c16-94af-f1cada67e527"
+      }
+    },
+    "owner": "mwebazej"
   }
 }

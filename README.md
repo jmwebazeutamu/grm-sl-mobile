@@ -1,7 +1,7 @@
 # GRM Sierra Leone — Mobile (Expo)
 
 React Native + Expo client for the GRM system. Talks to the Laravel mobile
-API at `http://104.225.218.102:8081/api/v1/mobile` (configurable via
+API at `https://grm-sl.quasar.ug/api/v1/mobile` (configurable via
 `app.json` → `extra.apiBaseUrl`).
 
 ## Status
