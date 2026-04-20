@@ -4,11 +4,9 @@
     "slug": "grm-sl-mobile",
     "version": "0.1.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
     "scheme": "grmsl",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#0f2044"
     },
@@ -20,7 +18,6 @@
     "android": {
       "package": "sl.gov.grm.mobile",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0f2044"
       }
     },

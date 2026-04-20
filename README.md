@@ -25,8 +25,25 @@ API at `http://104.225.218.102:8081/api/v1/mobile` (configurable via
 
 ```bash
 npm install
-npx expo start
+npx expo prebuild --clean   # regenerates android/ + ios/
+npx expo run:android        # or run:ios
 ```
+
+### Prerequisites
+- Node 20+
+- On Mac: Xcode + Xcode Command Line Tools + Watchman
+- Android Studio with the emulator booted AND **Android SDK 34+** installed
+  (Android Studio → Tools → SDK Manager → tick "Show Package Details" →
+  tick "Android SDK Platform 34" → Apply)
+- `adb` on your PATH:
+  ```bash
+  echo 'export ANDROID_HOME=$HOME/Library/Android/sdk' >> ~/.zshrc
+  echo 'export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator' >> ~/.zshrc
+  source ~/.zshrc
+  ```
+
+A `.npmrc` with `legacy-peer-deps=true` ships with the repo — required
+for SDK 55 until its dependency graph stabilises.
 
 Then:
 - Press **`i`** to open the iOS simulator (requires Xcode)
