@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { InputField } from '@/components/InputField';
@@ -57,9 +57,12 @@ const INITIAL: FormState = {
 
 const TOTAL_STEPS = 4;
 
+type FormErrors = Partial<Record<keyof FormState, string>>;
+
 export default function Submit() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(INITIAL);
+  const [errors, setErrors] = useState<FormErrors>({});
   const submit = useSubmitGrievance();
 
   const types = useGrievanceTypes();
@@ -73,22 +76,53 @@ export default function Submit() {
   const sections = useSections(form.chiefdom_id);
   const localities = useLocalities(form.section_id);
 
-  // Step validity — enables the next button
-  const canAdvance = useMemo(() => {
-    if (step === 0) return form.summary.trim().length > 0 && form.grievance_type_id !== null;
-    if (step === 1) return true; // location is optional
-    if (step === 2) {
-      if (form.is_anonymous) return true;
-      return form.first_name.trim().length > 0 || form.phone_number.trim().length > 0 || form.email.trim().length > 0;
-    }
-    return true;
-  }, [step, form]);
-
   function patch(k: Partial<FormState>) {
     setForm((prev) => ({ ...prev, ...k }));
+    // Clear any errors for the fields being edited.
+    const touched = Object.keys(k) as (keyof FormState)[];
+    setErrors((prev) => {
+      const next = { ...prev };
+      for (const key of touched) delete next[key];
+      return next;
+    });
+  }
+
+  /** Validate the current step. Returns plain-language message for first error (for the Alert), or null when valid. */
+  function validateStep(): string | null {
+    const e: FormErrors = {};
+    let firstMessage: string | null = null;
+
+    if (step === 0) {
+      if (!form.summary.trim()) {
+        e.summary = 'Add a short title.';
+        firstMessage ??= 'Please add a short title for your grievance before continuing.';
+      }
+      if (form.grievance_type_id === null) {
+        e.grievance_type_id = 'Pick one.';
+        firstMessage ??= 'Please pick the grievance type before continuing.';
+      }
+    } else if (step === 2 && !form.is_anonymous) {
+      const hasAny =
+        form.first_name.trim() || form.phone_number.trim() || form.email.trim();
+      if (!hasAny) {
+        e.first_name = 'Add a name, phone or email.';
+        e.phone_number = 'Add a name, phone or email.';
+        e.email = 'Add a name, phone or email.';
+        firstMessage ??=
+          'Please add at least one contact — a name, phone, or email — or switch on "Submit anonymously".';
+      }
+    }
+
+    setErrors(e);
+    return firstMessage;
   }
 
   function next() {
+    const msg = validateStep();
+    if (msg) {
+      Alert.alert('Missing information', msg);
+      return;
+    }
     if (step < TOTAL_STEPS - 1) setStep((s) => s + 1);
     else onSubmit();
   }
@@ -126,10 +160,11 @@ export default function Submit() {
           router.replace({ pathname: '/(public)/submit-success', params: { ref: result.grm_number } });
         },
         onError: (err: any) => {
-          Alert.alert(
-            'Could not submit',
-            err?.response?.data?.message ?? 'Please check your connection and try again.',
-          );
+          const serverMessage: string | undefined = err?.response?.data?.message;
+          const message = serverMessage
+            ? serverMessage
+            : 'Your form is still filled in. Tap Submit again when you have a better signal.';
+          Alert.alert('Could not submit', message);
         },
       },
     );
@@ -151,6 +186,7 @@ export default function Submit() {
             <StepAbout
               form={form}
               patch={patch}
+              errors={errors}
               types={types.data ?? []}
               typesLoading={types.isLoading}
               howReported={howReported.data ?? []}
@@ -174,7 +210,7 @@ export default function Submit() {
             />
           ) : null}
 
-          {step === 2 ? <StepContact form={form} patch={patch} /> : null}
+          {step === 2 ? <StepContact form={form} patch={patch} errors={errors} /> : null}
 
           {step === 3 ? (
             <StepReview
@@ -194,7 +230,7 @@ export default function Submit() {
         <View className="px-6 pb-6 pt-2 border-t border-white/10 bg-navy">
           <Pressable
             onPress={next}
-            disabled={!canAdvance || submit.isPending}
+            disabled={submit.isPending}
             className="bg-gold rounded-xl py-4 items-center flex-row justify-center gap-2 disabled:opacity-50"
           >
             {submit.isPending ? (
@@ -216,7 +252,7 @@ export default function Submit() {
 
 // ─── Step 1 — About ───────────────────────────────────────────────────────
 
-function StepAbout({ form, patch, types, typesLoading, howReported, howReportedLoading, orgs, orgsLoading, programmes, programmesLoading }: any) {
+function StepAbout({ form, patch, errors, types, typesLoading, howReported, howReportedLoading, orgs, orgsLoading, programmes, programmesLoading }: any) {
   return (
     <>
       <StepHeader step={0} total={TOTAL_STEPS} title="About the grievance" subtitle="A short title plus details." />
@@ -228,6 +264,7 @@ function StepAbout({ form, patch, types, typesLoading, howReported, howReportedL
           onChangeText={(v: string) => patch({ summary: v })}
           placeholder="Short title"
           maxLength={500}
+          error={errors?.summary}
         />
 
         <InputField
@@ -247,6 +284,7 @@ function StepAbout({ form, patch, types, typesLoading, howReported, howReportedL
           value={form.grievance_type_id}
           onChange={(id) => patch({ grievance_type_id: id })}
           clearable={false}
+          error={errors?.grievance_type_id}
         />
 
         <SelectSheet
@@ -335,7 +373,7 @@ function StepLocation({ form, patch, regions, districts, chiefdoms, sections, lo
 
 // ─── Step 3 — Contact ──────────────────────────────────────────────────────
 
-function StepContact({ form, patch }: any) {
+function StepContact({ form, patch, errors }: any) {
   return (
     <>
       <StepHeader step={2} total={TOTAL_STEPS} title="Your contact details" subtitle="Optional. Officers can reach back via whichever channel you give us." />
@@ -361,14 +399,14 @@ function StepContact({ form, patch }: any) {
         <View className="gap-3">
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <InputField label="First name" value={form.first_name} onChangeText={(v: string) => patch({ first_name: v })} maxLength={100} />
+              <InputField label="First name" value={form.first_name} onChangeText={(v: string) => patch({ first_name: v })} maxLength={100} error={errors?.first_name} />
             </View>
             <View className="flex-1">
               <InputField label="Last name" value={form.last_name} onChangeText={(v: string) => patch({ last_name: v })} maxLength={100} />
             </View>
           </View>
-          <InputField label="Email" value={form.email} onChangeText={(v: string) => patch({ email: v })} keyboardType="email-address" autoCapitalize="none" maxLength={150} />
-          <InputField label="Phone" value={form.phone_number} onChangeText={(v: string) => patch({ phone_number: v })} keyboardType="phone-pad" maxLength={30} />
+          <InputField label="Email" value={form.email} onChangeText={(v: string) => patch({ email: v })} keyboardType="email-address" autoCapitalize="none" maxLength={150} error={errors?.email} />
+          <InputField label="Phone" value={form.phone_number} onChangeText={(v: string) => patch({ phone_number: v })} keyboardType="phone-pad" maxLength={30} error={errors?.phone_number} />
           <InputField label="Address" value={form.address} onChangeText={(v: string) => patch({ address: v })} multiline maxLength={500} />
         </View>
       ) : (

@@ -9,7 +9,7 @@ interface Props extends TextInputProps {
 export function InputField({ label, error, hint, multiline, ...rest }: Props) {
   return (
     <View>
-      <View className="bg-white/10 rounded-xl border border-white/20 px-4 py-3">
+      <View className={`bg-white/10 rounded-xl border px-4 py-3 ${error ? 'border-red-400' : 'border-white/20'}`}>
         <Text className="text-white/60 text-xs uppercase tracking-wider">{label}</Text>
         <TextInput
           placeholderTextColor="#94a3b8"

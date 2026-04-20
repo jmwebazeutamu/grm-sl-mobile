@@ -14,6 +14,7 @@ interface Props<T extends Item> {
   disabled?: boolean;
   /** When true, "— Not specified —" is offered as a null option. */
   clearable?: boolean;
+  error?: string;
 }
 
 export function SelectSheet<T extends Item>({
@@ -25,6 +26,7 @@ export function SelectSheet<T extends Item>({
   label,
   disabled,
   clearable = true,
+  error,
 }: Props<T>) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -39,19 +41,28 @@ export function SelectSheet<T extends Item>({
 
   return (
     <>
-      <Pressable
-        disabled={disabled}
-        onPress={() => setOpen(true)}
-        className={`rounded-xl px-4 py-3 border ${disabled ? 'bg-white/5 border-white/10' : 'bg-white/10 border-white/20'}`}
-      >
-        <Text className="text-white/60 text-xs uppercase tracking-wider">{label}</Text>
-        <View className="flex-row items-center justify-between mt-0.5">
-          <Text className={`flex-1 text-base ${selected ? 'text-white' : 'text-white/40'}`} numberOfLines={1}>
-            {selected ? selected.name : placeholder}
-          </Text>
-          <Ionicons name="chevron-down" size={16} color="#c9a84c" />
-        </View>
-      </Pressable>
+      <View>
+        <Pressable
+          disabled={disabled}
+          onPress={() => setOpen(true)}
+          className={`rounded-xl px-4 py-3 border ${
+            error
+              ? 'bg-white/10 border-red-400'
+              : disabled
+                ? 'bg-white/5 border-white/10'
+                : 'bg-white/10 border-white/20'
+          }`}
+        >
+          <Text className="text-white/60 text-xs uppercase tracking-wider">{label}</Text>
+          <View className="flex-row items-center justify-between mt-0.5">
+            <Text className={`flex-1 text-base ${selected ? 'text-white' : 'text-white/40'}`} numberOfLines={1}>
+              {selected ? selected.name : placeholder}
+            </Text>
+            <Ionicons name="chevron-down" size={16} color="#c9a84c" />
+          </View>
+        </Pressable>
+        {error ? <Text className="text-red-300 text-xs mt-1 ml-1">{error}</Text> : null}
+      </View>
 
       <Modal
         visible={open}

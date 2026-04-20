@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useLocalSearchParams } from 'expo-router';
+import axios from 'axios';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '@/components/Card';
@@ -9,7 +10,11 @@ import { useTrack } from '@/hooks/useTrack';
 
 export default function Status() {
   const { ref } = useLocalSearchParams<{ ref: string }>();
-  const { data, isLoading, isError, error } = useTrack(ref ?? null);
+  const { data, isLoading, isError, error, refetch, isFetching } = useTrack(ref ?? null);
+
+  const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+  const isNetwork = axios.isAxiosError(error) && (status === undefined || error.code === 'ERR_NETWORK');
+  const isNotFound = status === 404;
 
   return (
     <SafeAreaView className="flex-1 bg-surface">
@@ -28,11 +33,48 @@ export default function Status() {
         </View>
       ) : isError || !data ? (
         <View className="flex-1 items-center justify-center px-6">
-          <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-          <Text className="text-navy font-bold text-lg mt-3 text-center">Grievance not found</Text>
-          <Text className="text-muted text-sm text-center mt-1">
-            No grievance with reference "{ref}". Check the number and try again.
+          <Ionicons
+            name={isNetwork ? 'cloud-offline-outline' : 'alert-circle-outline'}
+            size={48}
+            color={isNetwork ? '#64748b' : '#ef4444'}
+          />
+          <Text className="text-navy font-bold text-lg mt-3 text-center">
+            {isNetwork
+              ? 'Cannot reach the server'
+              : isNotFound
+                ? 'No case with that number'
+                : 'Something went wrong'}
           </Text>
+          <Text className="text-muted text-sm text-center mt-1 max-w-xs">
+            {isNetwork
+              ? 'Check your internet connection and try again.'
+              : isNotFound
+                ? `We couldn't find a case with reference "${ref}". Please check the number.`
+                : 'Please try again in a moment.'}
+          </Text>
+
+          <View className="flex-row gap-3 mt-5">
+            <Pressable
+              onPress={() => refetch()}
+              disabled={isFetching}
+              className={`bg-navy rounded-xl px-5 py-3 flex-row items-center gap-2 ${isFetching ? 'opacity-60' : ''}`}
+            >
+              {isFetching ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="refresh" size={18} color="#fff" />
+              )}
+              <Text className="text-white font-semibold text-sm">Try again</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.replace('/(public)/track')}
+              className="bg-white border border-border rounded-xl px-5 py-3 flex-row items-center gap-2"
+            >
+              <Ionicons name="create-outline" size={18} color="#0f2044" />
+              <Text className="text-navy font-semibold text-sm">Check the number</Text>
+            </Pressable>
+          </View>
         </View>
       ) : (
         <ScrollView className="flex-1 px-6 pt-4" contentContainerStyle={{ paddingBottom: 40 }}>
