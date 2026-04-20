@@ -34,3 +34,19 @@ export const useProgrammes = (orgId: number | null) =>
   refQuery<{ id: number; name: string; acronym: string | null; organization_id: number }>(
     ['ref', 'programmes', orgId], '/reference/programmes', { organisation_id: orgId }, orgId !== null,
   );
+
+export const useOfficers = (orgId: number | null) =>
+  refQuery(
+    ['ref', 'officers', orgId],
+    '/reference/officers',
+    { organisation_id: orgId },
+    orgId !== null,
+  );
+
+export const useOrgClassifications = (orgId: number | null) =>
+  refQuery(
+    ['ref', 'org-classifications', orgId],
+    '/reference/org-classifications',
+    { organisation_id: orgId },
+    orgId !== null,
+  );

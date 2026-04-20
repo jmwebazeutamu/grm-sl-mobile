@@ -8,6 +8,7 @@ import { Card } from '@/components/Card';
 import { DecisionBar } from '@/components/DecisionBar';
 import { SlaDot } from '@/components/SlaDot';
 import { StateBadge } from '@/components/StateBadge';
+import { WorkflowPanel } from '@/components/WorkflowPanel';
 import { stateColor } from '@/constants/states';
 import { useGrievanceDetail } from '@/hooks/useGrievances';
 
@@ -105,6 +106,9 @@ export default function GrievanceDetail() {
               </Card>
             </>
           ) : null}
+
+          {/* Workflow — categorize / classify / assign */}
+          <WorkflowPanel grievance={data} />
 
           {/* Attachments */}
           <AttachmentsPanel

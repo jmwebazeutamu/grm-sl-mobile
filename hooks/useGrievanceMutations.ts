@@ -69,3 +69,35 @@ export function useEscalateGrievance(id: number | null) {
     onSuccess: invalidate,
   });
 }
+
+export function useAssignOfficer(id: number | null) {
+  const invalidate = useInvalidate(id);
+  return useMutation({
+    mutationFn: async (officerId: number) =>
+      (await api.post(`/grievances/${id}/assign`, { officer_id: officerId })).data,
+    onSuccess: invalidate,
+  });
+}
+
+export interface CategorizePayload {
+  category: 'corruption' | 'administrative';
+  classified_organization_id: number;
+}
+
+export function useCategorize(id: number | null) {
+  const invalidate = useInvalidate(id);
+  return useMutation({
+    mutationFn: async (payload: CategorizePayload) =>
+      (await api.post(`/grievances/${id}/categorize`, payload)).data,
+    onSuccess: invalidate,
+  });
+}
+
+export function useClassify(id: number | null) {
+  const invalidate = useInvalidate(id);
+  return useMutation({
+    mutationFn: async (orgClassificationId: number) =>
+      (await api.post(`/grievances/${id}/classify`, { org_classification_id: orgClassificationId })).data,
+    onSuccess: invalidate,
+  });
+}
