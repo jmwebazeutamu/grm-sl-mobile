@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionComposer } from '@/components/ActionComposer';
+import { AttachmentsPanel } from '@/components/AttachmentsPanel';
 import { Card } from '@/components/Card';
 import { DecisionBar } from '@/components/DecisionBar';
 import { SlaDot } from '@/components/SlaDot';
@@ -104,6 +105,13 @@ export default function GrievanceDetail() {
               </Card>
             </>
           ) : null}
+
+          {/* Attachments */}
+          <AttachmentsPanel
+            grievanceId={data.id}
+            attachments={data.attachments}
+            canUpload={Boolean(data.capabilities.can_upload_attachment)}
+          />
 
           {/* Timeline */}
           <Text className="mt-6 mb-2 text-muted text-xs uppercase tracking-wider">Timeline</Text>
