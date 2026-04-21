@@ -5,6 +5,7 @@ import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { api, apiErrorMessage } from '@/lib/api';
+import { registerForPush } from '@/lib/push';
 import { useAuthStore, type AuthUser } from '@/stores/authStore';
 
 export default function Login() {
@@ -23,6 +24,8 @@ export default function Login() {
         password,
       });
       await setSession(data.token, data.user);
+      // Fire-and-forget — push registration shouldn't block sign-in.
+      registerForPush().catch(() => {});
       router.replace('/(staff)/dashboard');
     } catch (e) {
       setError(apiErrorMessage(e));

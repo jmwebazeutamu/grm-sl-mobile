@@ -36,6 +36,12 @@
           "photosPermission": "Attach photos to grievances.",
           "cameraPermission": "Take photos to attach to grievances."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0f2044"
+        }
       ]
     ],
     "experiments": {

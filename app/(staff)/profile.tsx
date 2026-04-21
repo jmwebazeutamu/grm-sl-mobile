@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '@/components/Card';
 import { api } from '@/lib/api';
+import { unregisterFromPush } from '@/lib/push';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function Profile() {
@@ -17,6 +18,7 @@ export default function Profile() {
         text: 'Sign out',
         style: 'destructive',
         onPress: async () => {
+          await unregisterFromPush();
           try { await api.post('/auth/logout'); } catch { /* fall through */ }
           await clearSession();
           router.replace('/');
