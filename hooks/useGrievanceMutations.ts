@@ -55,7 +55,7 @@ export function useBeginClosure(id: number | null) {
 export function useCloseGrievance(id: number | null) {
   const invalidate = useInvalidate(id);
   return useMutation({
-    mutationFn: async (comment?: string) =>
+    mutationFn: async (comment: string) =>
       (await api.post(`/grievances/${id}/closure/close`, { comment })).data,
     onSuccess: invalidate,
   });
@@ -64,7 +64,7 @@ export function useCloseGrievance(id: number | null) {
 export function useEscalateGrievance(id: number | null) {
   const invalidate = useInvalidate(id);
   return useMutation({
-    mutationFn: async (comment?: string) =>
+    mutationFn: async (comment: string) =>
       (await api.post(`/grievances/${id}/closure/escalate`, { comment })).data,
     onSuccess: invalidate,
   });
