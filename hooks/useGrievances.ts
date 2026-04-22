@@ -53,7 +53,15 @@ export interface GrievanceDetail {
   org_classification: { id: number; label: string } | null;
   location: Record<string, string | null>;
   complainer: Record<string, string | null> | null;
-  suspects: Array<{ id: number; first_name: string; last_name: string; title: string | null; is_beneficiary: boolean }>;
+  suspects: Array<{
+    id: number;
+    first_name: string;
+    last_name: string;
+    title: string | null;
+    phone_number: string | null;
+    is_beneficiary: boolean;
+    beneficiary_id_number: string | null;
+  }>;
   attachments: Array<{ id: number; original_name: string; mime_type: string; size_bytes: number; uploaded_by: string | null; created_at: string | null }>;
   assigned_officer: { id: number; name: string } | null;
   received_at: string | null;

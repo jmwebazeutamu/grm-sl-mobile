@@ -89,20 +89,66 @@ export default function GrievanceDetail() {
             </>
           ) : null}
 
-          {/* Complainer */}
-          {data.complainer && !data.is_anonymous ? (
+          {/* Complainant — only when non-anonymous AND the record has at least
+              one populated field. */}
+          {data.complainer && !data.is_anonymous &&
+            Object.values(data.complainer).some(Boolean) ? (
             <>
-              <Text className="mt-6 mb-2 text-muted text-xs uppercase tracking-wider">Complainer</Text>
+              <Text className="mt-6 mb-2 text-muted text-xs uppercase tracking-wider">Complainant</Text>
               <Card>
-                <Text className="text-navy font-semibold">
-                  {data.complainer.first_name} {data.complainer.last_name}
-                </Text>
+                {(data.complainer.first_name || data.complainer.last_name) ? (
+                  <Text className="text-navy font-semibold">
+                    {[data.complainer.first_name, data.complainer.last_name].filter(Boolean).join(' ')}
+                  </Text>
+                ) : null}
                 {data.complainer.phone_number ? (
-                  <Text className="text-muted text-sm mt-0.5">{data.complainer.phone_number}</Text>
+                  <Row label="Phone" value={data.complainer.phone_number} />
                 ) : null}
                 {data.complainer.email ? (
-                  <Text className="text-muted text-sm">{data.complainer.email}</Text>
+                  <Row label="Email" value={data.complainer.email} />
                 ) : null}
+                {data.complainer.address ? (
+                  <Row label="Address" value={data.complainer.address} />
+                ) : null}
+              </Card>
+            </>
+          ) : null}
+
+          {/* Persons this grievance is about — suspects + beneficiaries. */}
+          {data.suspects && data.suspects.length > 0 ? (
+            <>
+              <Text className="mt-6 mb-2 text-muted text-xs uppercase tracking-wider">
+                Persons this grievance is about
+              </Text>
+              <Card>
+                {data.suspects.map((s, idx) => (
+                  <View
+                    key={s.id}
+                    className={idx > 0 ? 'pt-3 mt-3 border-t border-border' : ''}
+                  >
+                    <View className="flex-row items-center gap-2">
+                      <Text className="text-navy font-semibold flex-1" numberOfLines={1}>
+                        {[s.first_name, s.last_name].filter(Boolean).join(' ') || '—'}
+                      </Text>
+                      {s.is_beneficiary ? (
+                        <View className="bg-gold/20 border border-gold/40 rounded-full px-2 py-0.5">
+                          <Text className="text-gold text-[10px] font-bold uppercase tracking-wider">
+                            Beneficiary
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    {s.title ? (
+                      <Text className="text-muted text-xs mt-0.5">{s.title}</Text>
+                    ) : null}
+                    {s.phone_number ? (
+                      <Row label="Phone" value={s.phone_number} />
+                    ) : null}
+                    {s.is_beneficiary && s.beneficiary_id_number ? (
+                      <Row label="Beneficiary ID" value={s.beneficiary_id_number} />
+                    ) : null}
+                  </View>
+                ))}
               </Card>
             </>
           ) : null}
