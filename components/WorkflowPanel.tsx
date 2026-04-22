@@ -19,12 +19,21 @@ interface GrievanceLike {
   capabilities: Record<string, boolean>;
 }
 
+// State-based action guards. Super-admin bypasses policy checks server-side
+// (Gate::before), so the API may return `can_*=true` even when the workflow
+// wouldn't actually allow the transition. These client-side guards ensure the
+// UI only offers actions the server will accept.
+const CATEGORIZE_STATES = ['accepted'];
+const CLASSIFY_STATES = ['assigned'];
+const ASSIGN_STATES = ['assigned', 'org_classified', 'in_progress', 'reopened'];
+
 export function WorkflowPanel({ grievance }: { grievance: GrievanceLike }) {
   const [flow, setFlow] = useState<null | 'categorize' | 'classify' | 'assign'>(null);
 
-  const canCategorize = Boolean(grievance.capabilities.can_classify);
-  const canSubClassify = Boolean(grievance.capabilities.can_org_classify);
-  const canAssign = Boolean(grievance.capabilities.can_assign);
+  const state = grievance.state;
+  const canCategorize = Boolean(grievance.capabilities.can_classify) && CATEGORIZE_STATES.includes(state);
+  const canSubClassify = Boolean(grievance.capabilities.can_org_classify) && CLASSIFY_STATES.includes(state);
+  const canAssign = Boolean(grievance.capabilities.can_assign) && ASSIGN_STATES.includes(state);
 
   if (!canCategorize && !canSubClassify && !canAssign) return null;
 

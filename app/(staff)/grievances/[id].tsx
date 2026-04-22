@@ -135,8 +135,15 @@ export default function GrievanceDetail() {
           capabilities={data.capabilities}
         />
 
-        {/* Action composer — always present when user can update */}
-        {data.capabilities.can_edit ? <ActionComposer grievanceId={data.id} /> : null}
+        {/* Action composer — only on states where posting an action is a
+            legal workflow move. Super-admin's Gate::before bypass on the API
+            side means can_edit can be true even on closed/rejected/etc.; this
+            client guard stops the UI offering the composer when the server
+            would reject the transition. */}
+        {data.capabilities.can_edit &&
+          ['in_progress', 'reopened', 'org_classified'].includes(data.state) ? (
+          <ActionComposer grievanceId={data.id} />
+        ) : null}
         </KeyboardAvoidingView>
       )}
     </SafeAreaView>
