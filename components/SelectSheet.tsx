@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { ChipPicker } from '@/components/ChipPicker';
 
 interface Item { id: number; name: string; [k: string]: unknown }
 
@@ -15,6 +16,10 @@ interface Props<T extends Item> {
   /** When true, "— Not specified —" is offered as a null option. */
   clearable?: boolean;
   error?: string;
+  /** 'dropdown' (default) opens the full-screen modal picker; 'chips'
+   *  renders all options inline as tappable pills — intended for short
+   *  static enums. Placeholder + `disabled` are ignored in chips mode. */
+  selectionStyle?: 'dropdown' | 'chips';
 }
 
 export function SelectSheet<T extends Item>({
@@ -27,7 +32,21 @@ export function SelectSheet<T extends Item>({
   disabled,
   clearable = true,
   error,
+  selectionStyle = 'dropdown',
 }: Props<T>) {
+  if (selectionStyle === 'chips') {
+    return (
+      <ChipPicker
+        items={items}
+        loading={loading}
+        value={value}
+        onChange={onChange}
+        label={label}
+        clearable={clearable}
+        error={error}
+      />
+    );
+  }
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 

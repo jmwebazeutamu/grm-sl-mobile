@@ -294,6 +294,7 @@ function StepAbout({ form, patch, errors, types, typesLoading, howReported, howR
           loading={howReportedLoading}
           value={form.how_reported_id}
           onChange={(id) => patch({ how_reported_id: id })}
+          selectionStyle="chips"
         />
 
         <SelectSheet

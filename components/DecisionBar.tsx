@@ -5,6 +5,7 @@ import {
   useBeginClosure,
   useCloseGrievance,
   useEscalateGrievance,
+  usePostAction,
   useReview,
 } from '@/hooks/useGrievanceMutations';
 
@@ -25,6 +26,7 @@ export function DecisionBar({ grievanceId, state, capabilities }: Props) {
   const begin = useBeginClosure(grievanceId);
   const close = useCloseGrievance(grievanceId);
   const escalate = useEscalateGrievance(grievanceId);
+  const postAction = usePostAction(grievanceId);
 
   const [reviewing, setReviewing] = useState<null | 'accept' | 'reject'>(null);
   const [reviewComment, setReviewComment] = useState('');
@@ -32,14 +34,19 @@ export function DecisionBar({ grievanceId, state, capabilities }: Props) {
   const [closureKind, setClosureKind] = useState<null | 'close' | 'escalate'>(null);
   const [closureComment, setClosureComment] = useState('');
 
+  const [resolving, setResolving] = useState(false);
+  const [resolveComment, setResolveComment] = useState('');
+
   const showReview =
     capabilities.can_review && (state === 'submitted' || state === 'under_review');
+  const showResolve =
+    capabilities.can_edit && state === 'in_progress';
   const showBeginClosure =
     capabilities.can_closure_action && state === 'resolved';
   const showCloseOrEscalate =
     capabilities.can_closure_action && state === 'under_admin_review';
 
-  if (!showReview && !showBeginClosure && !showCloseOrEscalate) return null;
+  if (!showReview && !showResolve && !showBeginClosure && !showCloseOrEscalate) return null;
 
   function openReview(decision: 'accept' | 'reject') {
     setReviewComment('');
@@ -68,6 +75,27 @@ export function DecisionBar({ grievanceId, state, capabilities }: Props) {
         { text: 'Cancel', style: 'cancel' },
         { text: 'Send', onPress: () => begin.mutate() },
       ],
+    );
+  }
+
+  function openResolve() {
+    setResolveComment('');
+    setResolving(true);
+  }
+
+  function confirmResolve() {
+    const body = resolveComment.trim();
+    if (body.length < CLOSURE_MIN_CHARS) return;
+    setResolving(false);
+    postAction.mutate(
+      { type: 'resolve', body },
+      {
+        onError: (err: any) =>
+          Alert.alert(
+            'Could not resolve',
+            err?.response?.data?.message ?? 'Please try again.',
+          ),
+      },
     );
   }
 
@@ -118,6 +146,18 @@ export function DecisionBar({ grievanceId, state, capabilities }: Props) {
         </View>
       ) : null}
 
+      {showResolve ? (
+        <Pressable
+          onPress={openResolve}
+          disabled={postAction.isPending}
+          className="bg-state-resolved rounded-xl py-3 flex-row items-center justify-center gap-2"
+          accessibilityLabel="Mark this grievance as resolved"
+        >
+          <Ionicons name="checkmark-done-circle" size={18} color="#fff" />
+          <Text className="text-white font-bold text-sm">Mark as resolved</Text>
+        </Pressable>
+      ) : null}
+
       {showBeginClosure ? (
         <Pressable
           onPress={onBegin}
@@ -158,6 +198,15 @@ export function DecisionBar({ grievanceId, state, capabilities }: Props) {
         onCancel={() => setReviewing(null)}
         onConfirm={confirmReview}
         pending={review.isPending}
+      />
+
+      <ResolveModal
+        open={resolving}
+        comment={resolveComment}
+        onChangeComment={setResolveComment}
+        onCancel={() => setResolving(false)}
+        onConfirm={confirmResolve}
+        pending={postAction.isPending}
       />
 
       <ClosureModal
@@ -314,6 +363,79 @@ function ClosureModal({
             >
               <Text className="text-white font-bold text-sm">
                 {pending ? 'Saving…' : confirmLabel}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ResolveModal({
+  open,
+  comment,
+  onChangeComment,
+  onCancel,
+  onConfirm,
+  pending,
+}: {
+  open: boolean;
+  comment: string;
+  onChangeComment: (s: string) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+  pending: boolean;
+}) {
+  const charsShort = Math.max(0, CLOSURE_MIN_CHARS - comment.trim().length);
+  const canConfirm = comment.trim().length >= CLOSURE_MIN_CHARS && !pending;
+
+  return (
+    <Modal visible={open} animationType="fade" transparent onRequestClose={onCancel}>
+      <View className="flex-1 bg-black/50 justify-end">
+        <View className="bg-white rounded-t-3xl px-5 pt-5 pb-8">
+          <Text className="text-navy font-bold text-lg">Mark as resolved</Text>
+          <Text className="text-muted text-sm mt-1">
+            Summarise what you did to resolve the case. The complainant will be
+            invited to confirm the outcome; your summary is recorded on the
+            timeline.
+          </Text>
+
+          <TextInput
+            value={comment}
+            onChangeText={onChangeComment}
+            placeholder="Payment delivered, issue resolved…"
+            placeholderTextColor="#94a3b8"
+            multiline
+            maxLength={2000}
+            className="mt-4 bg-surface border border-border rounded-xl px-3 py-3 text-navy"
+            style={{ minHeight: 120, textAlignVertical: 'top' }}
+            autoFocus
+          />
+
+          <Text className="text-muted text-xs mt-2">
+            {charsShort > 0
+              ? `Needs at least ${charsShort} more character${charsShort === 1 ? '' : 's'}.`
+              : 'Ready to send.'}
+          </Text>
+
+          <View className="flex-row gap-2 mt-5">
+            <Pressable
+              onPress={onCancel}
+              disabled={pending}
+              className="flex-1 border border-border rounded-xl py-3 items-center"
+            >
+              <Text className="text-navy font-semibold text-sm">Cancel</Text>
+            </Pressable>
+            <Pressable
+              onPress={onConfirm}
+              disabled={!canConfirm}
+              className={`flex-1 rounded-xl py-3 items-center bg-state-resolved ${
+                !canConfirm ? 'opacity-50' : ''
+              }`}
+            >
+              <Text className="text-white font-bold text-sm">
+                {pending ? 'Saving…' : 'Mark as resolved'}
               </Text>
             </Pressable>
           </View>
