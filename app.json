@@ -6,7 +6,9 @@
     "orientation": "portrait",
     "scheme": "grmsl",
     "userInterfaceStyle": "light",
+    "icon": "./assets/images/icon.png",
     "splash": {
+      "image": "./assets/images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0f2044"
     },
@@ -20,6 +22,7 @@
     "android": {
       "package": "sl.gov.grm.mobile",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0f2044"
       }
     },
@@ -40,6 +43,7 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/images/notification-icon.png",
           "color": "#0f2044"
         }
       ]
