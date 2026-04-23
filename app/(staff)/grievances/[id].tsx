@@ -9,8 +9,8 @@ import { Card } from '@/components/Card';
 import { DecisionBar } from '@/components/DecisionBar';
 import { SlaDot } from '@/components/SlaDot';
 import { StateBadge } from '@/components/StateBadge';
+import { Timeline } from '@/components/Timeline';
 import { WorkflowPanel } from '@/components/WorkflowPanel';
-import { stateColor } from '@/constants/states';
 import { useGrievanceDetail } from '@/hooks/useGrievances';
 
 export default function GrievanceDetail() {
@@ -167,13 +167,7 @@ export default function GrievanceDetail() {
 
           {/* Timeline */}
           <Text className="mt-6 mb-2 text-muted text-xs uppercase tracking-wider">Timeline</Text>
-          <Card>
-            {data.timeline.length === 0 ? (
-              <Text className="text-muted text-sm">No timeline entries.</Text>
-            ) : (
-              data.timeline.map((t, i) => <TimelineEntry key={i} entry={t} />)
-            )}
-          </Card>
+          <Timeline events={data.timeline} />
         </ScrollView>
 
         {/* Decisions (review, closure) — above the free-form composer */}
@@ -213,32 +207,3 @@ function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function TimelineEntry({ entry }: { entry: { kind: string; occurred_at: string; actor: { name: string } | null; data: Record<string, unknown> } }) {
-  const stateVal = (entry.data?.to_state ?? entry.data?.state) as string | undefined;
-  const color = stateVal ? stateColor(stateVal) : '#c9a84c';
-  const title =
-    entry.kind === 'state'
-      ? `Moved to ${String(entry.data?.to_state_label ?? stateVal ?? 'new state')}`
-      : entry.kind === 'action'
-      ? String(entry.data?.type_label ?? 'Action')
-      : entry.kind === 'feedback'
-      ? 'Feedback received'
-      : 'Submitted';
-  const date = new Date(entry.occurred_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-
-  return (
-    <View className="flex-row items-start py-2">
-      <View className="w-2.5 h-2.5 rounded-full mt-1.5 mr-3" style={{ backgroundColor: color }} />
-      <View className="flex-1">
-        <Text className="text-navy font-semibold text-sm">{title}</Text>
-        <Text className="text-muted text-xs mt-0.5">
-          {date}
-          {entry.actor ? ` · ${entry.actor.name}` : ''}
-        </Text>
-        {entry.data?.body ? (
-          <Text className="text-navy/80 text-sm mt-1">{String(entry.data.body)}</Text>
-        ) : null}
-      </View>
-    </View>
-  );
-}
