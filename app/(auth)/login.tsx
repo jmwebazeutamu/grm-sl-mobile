@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '@/components/Button';
 import { api, apiErrorMessage } from '@/lib/api';
 import { registerForPush } from '@/lib/push';
 import { useAuthStore, type AuthUser } from '@/stores/authStore';
+
+const ACC_LOGO = require('@/assets/images/acc-logo.png');
 
 export default function Login() {
   const setSession = useAuthStore((s) => s.setSession);
@@ -49,6 +50,14 @@ export default function Login() {
           </Link>
 
           <View>
+            <View className="items-center mb-6">
+              <Image
+                source={ACC_LOGO}
+                resizeMode="contain"
+                accessibilityLabel="Anti-Corruption Commission Sierra Leone crest"
+                style={{ width: 84, height: 70 }}
+              />
+            </View>
             <Text className="text-white text-3xl font-bold">Staff sign in</Text>
             <Text className="text-gold-light mt-1">Use your GRM account credentials.</Text>
 

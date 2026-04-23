@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router } from 'expo-router';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Image, Linking, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
+
+const ACC_LOGO = require('@/assets/images/acc-logo.png');
 
 const AMBER = '#d4a43a';
 const NAVY_BG = '#0d2a4d';
@@ -49,23 +51,12 @@ export default function Landing() {
 function Hero() {
   return (
     <View style={{ alignItems: 'center' }}>
-      <View
-        style={{
-          width: 72,
-          height: 72,
-          borderRadius: 36,
-          backgroundColor: AMBER,
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.25,
-          shadowRadius: 12,
-          elevation: 6,
-        }}
-      >
-        <Ionicons name="shield-checkmark" size={40} color={DEEP_NAVY} />
-      </View>
+      <Image
+        source={ACC_LOGO}
+        resizeMode="contain"
+        accessibilityLabel="Anti-Corruption Commission Sierra Leone crest"
+        style={{ width: 110, height: 92 }}
+      />
 
       <Text
         accessibilityRole="header"

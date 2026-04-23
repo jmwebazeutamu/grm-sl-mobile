@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AccountAvatarMenu } from '@/components/AccountAvatarMenu';
 import { Card } from '@/components/Card';
 import { performSignOut } from '@/lib/auth';
 import { useAuthStore } from '@/stores/authStore';
+
+const ACC_LOGO = require('@/assets/images/acc-logo.png');
 
 export default function Profile() {
   const user = useAuthStore((s) => s.user);
@@ -20,7 +22,13 @@ export default function Profile() {
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScrollView className="flex-1">
         <View className="bg-navy px-6 pt-4 pb-10 rounded-b-3xl">
-          <View className="flex-row justify-end mb-2">
+          <View className="flex-row items-center justify-between mb-2">
+            <Image
+              source={ACC_LOGO}
+              resizeMode="contain"
+              accessibilityLabel="Anti-Corruption Commission Sierra Leone crest"
+              style={{ width: 52, height: 44 }}
+            />
             <AccountAvatarMenu theme="dark" />
           </View>
           <View className="items-center">
