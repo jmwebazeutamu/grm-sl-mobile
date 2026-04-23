@@ -26,6 +26,10 @@ export interface SubmitPayload {
     last_name?: string;
     title?: string;
     phone_number?: string;
+    is_beneficiary?: boolean;
+    implementing_organization_id?: number;
+    programme_id?: number;
+    beneficiary_id_number?: string;
   }>;
   // Dummy; backend accepts the word "dev" when no reCAPTCHA is wired.
   recaptcha_token?: string;

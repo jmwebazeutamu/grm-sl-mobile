@@ -24,7 +24,22 @@ interface Suspect {
   last_name: string;
   title: string;
   phone_number: string;
+  is_beneficiary: boolean;
+  implementing_organization_id: number | null;
+  programme_id: number | null;
+  beneficiary_id_number: string;
 }
+
+const EMPTY_SUSPECT: Suspect = {
+  first_name: '',
+  last_name: '',
+  title: '',
+  phone_number: '',
+  is_beneficiary: false,
+  implementing_organization_id: null,
+  programme_id: null,
+  beneficiary_id_number: '',
+};
 
 interface FormState {
   summary: string;
@@ -169,6 +184,14 @@ export default function Submit() {
               last_name: s.last_name.trim() || undefined,
               title: s.title.trim() || undefined,
               phone_number: s.phone_number.trim() || undefined,
+              ...(s.is_beneficiary
+                ? {
+                    is_beneficiary: true,
+                    implementing_organization_id: s.implementing_organization_id ?? undefined,
+                    programme_id: s.programme_id ?? undefined,
+                    beneficiary_id_number: s.beneficiary_id_number.trim() || undefined,
+                  }
+                : {}),
             }))
           : undefined,
       },
@@ -227,7 +250,14 @@ export default function Submit() {
             />
           ) : null}
 
-          {step === 2 ? <StepPersons form={form} patch={patch} /> : null}
+          {step === 2 ? (
+            <StepPersons
+              form={form}
+              patch={patch}
+              orgs={orgs.data ?? []}
+              orgsLoading={orgs.isLoading}
+            />
+          ) : null}
 
           {step === 3 ? <StepContact form={form} patch={patch} errors={errors} /> : null}
 
@@ -393,14 +423,32 @@ function StepLocation({ form, patch, regions, districts, chiefdoms, sections, lo
 
 // ─── Step 3 — Persons this grievance is about ─────────────────────────────
 
-function StepPersons({ form, patch }: { form: FormState; patch: (k: Partial<FormState>) => void }) {
-  const [draft, setDraft] = useState<Suspect>({ first_name: '', last_name: '', title: '', phone_number: '' });
+function StepPersons({
+  form,
+  patch,
+  orgs,
+  orgsLoading,
+}: {
+  form: FormState;
+  patch: (k: Partial<FormState>) => void;
+  orgs: { id: number; name: string; acronym: string | null }[];
+  orgsLoading: boolean;
+}) {
+  const [draft, setDraft] = useState<Suspect>(EMPTY_SUSPECT);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  const canAdd =
+  // Programmes for the draft person's implementing organisation; the
+  // hook is safe with a null org id and returns [] until one is picked.
+  const draftProgrammes = useProgrammes(draft.implementing_organization_id);
+
+  const hasIdentity =
     draft.first_name.trim().length > 0 ||
     draft.last_name.trim().length > 0 ||
     draft.phone_number.trim().length > 0;
+  const beneficiaryReady =
+    !draft.is_beneficiary ||
+    (draft.implementing_organization_id !== null && draft.programme_id !== null);
+  const canAdd = hasIdentity && beneficiaryReady;
 
   function commit() {
     if (!canAdd) return;
@@ -409,6 +457,14 @@ function StepPersons({ form, patch }: { form: FormState; patch: (k: Partial<Form
       last_name: draft.last_name.trim(),
       title: draft.title.trim(),
       phone_number: draft.phone_number.trim(),
+      is_beneficiary: draft.is_beneficiary,
+      implementing_organization_id: draft.is_beneficiary
+        ? draft.implementing_organization_id
+        : null,
+      programme_id: draft.is_beneficiary ? draft.programme_id : null,
+      beneficiary_id_number: draft.is_beneficiary
+        ? draft.beneficiary_id_number.trim()
+        : '',
     };
     if (editingIndex !== null) {
       const copy = [...form.suspects];
@@ -418,7 +474,7 @@ function StepPersons({ form, patch }: { form: FormState; patch: (k: Partial<Form
     } else {
       patch({ suspects: [...form.suspects, next] });
     }
-    setDraft({ first_name: '', last_name: '', title: '', phone_number: '' });
+    setDraft(EMPTY_SUSPECT);
   }
 
   function startEdit(i: number) {
@@ -431,13 +487,25 @@ function StepPersons({ form, patch }: { form: FormState; patch: (k: Partial<Form
     patch({ suspects: copy });
     if (editingIndex === i) {
       setEditingIndex(null);
-      setDraft({ first_name: '', last_name: '', title: '', phone_number: '' });
+      setDraft(EMPTY_SUSPECT);
     }
   }
 
   function cancelEdit() {
     setEditingIndex(null);
-    setDraft({ first_name: '', last_name: '', title: '', phone_number: '' });
+    setDraft(EMPTY_SUSPECT);
+  }
+
+  function toggleBeneficiary(on: boolean) {
+    setDraft((d) => ({
+      ...d,
+      is_beneficiary: on,
+      // Clear dependent selections when switching off so we don't ship
+      // orphaned ids on Save.
+      implementing_organization_id: on ? d.implementing_organization_id : null,
+      programme_id: on ? d.programme_id : null,
+      beneficiary_id_number: on ? d.beneficiary_id_number : '',
+    }));
   }
 
   return (
@@ -451,30 +519,51 @@ function StepPersons({ form, patch }: { form: FormState; patch: (k: Partial<Form
 
       {form.suspects.length > 0 ? (
         <View className="gap-2 mb-4">
-          {form.suspects.map((p, i) => (
-            <View
-              key={i}
-              className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 flex-row items-start"
-            >
-              <View className="flex-1 pr-3">
-                <Text className="text-white font-semibold">
-                  {[p.first_name, p.last_name].filter(Boolean).join(' ') || 'Unnamed person'}
-                </Text>
-                {p.title ? (
-                  <Text className="text-gold-light text-xs mt-0.5">{p.title}</Text>
-                ) : null}
-                {p.phone_number ? (
-                  <Text className="text-white/60 text-xs mt-0.5">{p.phone_number}</Text>
-                ) : null}
+          {form.suspects.map((p, i) => {
+            const org = p.is_beneficiary && p.implementing_organization_id
+              ? orgs.find((o) => o.id === p.implementing_organization_id)
+              : null;
+            return (
+              <View
+                key={i}
+                className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 flex-row items-start"
+              >
+                <View className="flex-1 pr-3">
+                  <View className="flex-row items-center gap-2 flex-wrap">
+                    <Text className="text-white font-semibold">
+                      {[p.first_name, p.last_name].filter(Boolean).join(' ') || 'Unnamed person'}
+                    </Text>
+                    {p.is_beneficiary ? (
+                      <View className="bg-gold/20 border border-gold/40 rounded-full px-2 py-0.5 flex-row items-center gap-1">
+                        <Ionicons name="ribbon-outline" size={10} color="#e8c97a" />
+                        <Text className="text-gold-light text-[10px] font-semibold uppercase tracking-wide">
+                          Beneficiary
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  {p.title ? (
+                    <Text className="text-gold-light text-xs mt-0.5">{p.title}</Text>
+                  ) : null}
+                  {p.phone_number ? (
+                    <Text className="text-white/60 text-xs mt-0.5">{p.phone_number}</Text>
+                  ) : null}
+                  {org ? (
+                    <Text className="text-white/60 text-xs mt-0.5">
+                      {org.acronym ?? org.name}
+                      {p.beneficiary_id_number ? ` · ID ${p.beneficiary_id_number}` : ''}
+                    </Text>
+                  ) : null}
+                </View>
+                <Pressable onPress={() => startEdit(i)} hitSlop={8} className="p-1 mr-1">
+                  <Ionicons name="create-outline" size={18} color="#e8c97a" />
+                </Pressable>
+                <Pressable onPress={() => remove(i)} hitSlop={8} className="p-1">
+                  <Ionicons name="close-circle" size={20} color="#fca5a5" />
+                </Pressable>
               </View>
-              <Pressable onPress={() => startEdit(i)} hitSlop={8} className="p-1 mr-1">
-                <Ionicons name="create-outline" size={18} color="#e8c97a" />
-              </Pressable>
-              <Pressable onPress={() => remove(i)} hitSlop={8} className="p-1">
-                <Ionicons name="close-circle" size={20} color="#fca5a5" />
-              </Pressable>
-            </View>
-          ))}
+            );
+          })}
         </View>
       ) : null}
 
@@ -514,6 +603,70 @@ function StepPersons({ form, patch }: { form: FormState; patch: (k: Partial<Form
           keyboardType="phone-pad"
           maxLength={30}
         />
+
+        <View className="bg-white/5 border border-white/10 rounded-xl p-3 mt-1">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1 pr-3">
+              <Text className="text-white font-semibold text-sm">
+                This person is a project beneficiary
+              </Text>
+              <Text className="text-white/60 text-xs mt-0.5">
+                Turn on if they receive support from a programme run by an
+                implementing organisation.
+              </Text>
+            </View>
+            <Switch
+              value={draft.is_beneficiary}
+              onValueChange={toggleBeneficiary}
+              trackColor={{ false: '#475569', true: '#c9a84c' }}
+              thumbColor="#fff"
+            />
+          </View>
+
+          {draft.is_beneficiary ? (
+            <View className="gap-3 mt-3">
+              <SelectSheet
+                label="Implementing organisation *"
+                placeholder="Pick one"
+                items={orgs}
+                loading={orgsLoading}
+                value={draft.implementing_organization_id}
+                onChange={(id) =>
+                  setDraft((d) => ({
+                    ...d,
+                    implementing_organization_id: id,
+                    // Clear programme whenever org changes — programmes
+                    // are org-scoped, so the old id is almost certainly
+                    // invalid for the new parent.
+                    programme_id: null,
+                  }))
+                }
+                clearable={false}
+              />
+              <SelectSheet
+                label="Programme / project *"
+                placeholder={
+                  draft.implementing_organization_id === null
+                    ? 'Pick an organisation first'
+                    : 'Pick a programme'
+                }
+                items={draftProgrammes.data ?? []}
+                loading={draftProgrammes.isLoading}
+                disabled={draft.implementing_organization_id === null}
+                value={draft.programme_id}
+                onChange={(id) => setDraft((d) => ({ ...d, programme_id: id }))}
+                clearable={false}
+              />
+              <InputField
+                label="Beneficiary ID number"
+                value={draft.beneficiary_id_number}
+                onChangeText={(v: string) => setDraft({ ...draft, beneficiary_id_number: v })}
+                placeholder="Optional"
+                maxLength={100}
+              />
+            </View>
+          ) : null}
+        </View>
 
         <View className="flex-row gap-2 mt-1">
           {editingIndex !== null ? (
