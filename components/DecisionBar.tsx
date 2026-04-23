@@ -31,6 +31,7 @@ export function DecisionBar({ grievanceId, state, capabilities }: Props) {
   const [reviewing, setReviewing] = useState<null | 'accept' | 'reject'>(null);
   const [reviewComment, setReviewComment] = useState('');
 
+  const [closureOpen, setClosureOpen] = useState(false);
   const [closureKind, setClosureKind] = useState<null | 'close' | 'escalate'>(null);
   const [closureComment, setClosureComment] = useState('');
 
@@ -99,16 +100,17 @@ export function DecisionBar({ grievanceId, state, capabilities }: Props) {
     );
   }
 
-  function openClosure(kind: 'close' | 'escalate') {
+  function openClosure() {
     setClosureComment('');
-    setClosureKind(kind);
+    setClosureKind(null);
+    setClosureOpen(true);
   }
 
   function confirmClosure() {
     const comment = closureComment.trim();
     if (comment.length < CLOSURE_MIN_CHARS || !closureKind) return;
     const kind = closureKind;
-    setClosureKind(null);
+    setClosureOpen(false);
     const mut = kind === 'close' ? close : escalate;
     mut.mutate(comment, {
       onError: (err: any) =>
@@ -170,24 +172,15 @@ export function DecisionBar({ grievanceId, state, capabilities }: Props) {
       ) : null}
 
       {showCloseOrEscalate ? (
-        <View className="flex-row gap-2">
-          <Pressable
-            onPress={() => openClosure('close')}
-            disabled={close.isPending}
-            className="flex-1 bg-state-closed rounded-xl py-3 flex-row items-center justify-center gap-2"
-          >
-            <Ionicons name="archive" size={18} color="#fff" />
-            <Text className="text-white font-bold text-sm">Close case</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => openClosure('escalate')}
-            disabled={escalate.isPending}
-            className="flex-1 bg-state-escalated rounded-xl py-3 flex-row items-center justify-center gap-2"
-          >
-            <Ionicons name="arrow-up-circle" size={18} color="#fff" />
-            <Text className="text-white font-bold text-sm">Send back</Text>
-          </Pressable>
-        </View>
+        <Pressable
+          onPress={openClosure}
+          disabled={close.isPending || escalate.isPending}
+          className="bg-navy rounded-xl py-3 flex-row items-center justify-center gap-2"
+          accessibilityLabel="Review closure with complainant satisfaction"
+        >
+          <Ionicons name="clipboard-outline" size={18} color="#fff" />
+          <Text className="text-white font-bold text-sm">Closure review</Text>
+        </Pressable>
       ) : null}
 
       <ReviewModal
@@ -210,11 +203,12 @@ export function DecisionBar({ grievanceId, state, capabilities }: Props) {
       />
 
       <ClosureModal
-        open={closureKind !== null}
-        kind={closureKind ?? 'close'}
+        open={closureOpen}
+        kind={closureKind}
+        onChangeKind={setClosureKind}
         comment={closureComment}
         onChangeComment={setClosureComment}
-        onCancel={() => setClosureKind(null)}
+        onCancel={() => setClosureOpen(false)}
         onConfirm={confirmClosure}
         pending={close.isPending || escalate.isPending}
       />
@@ -294,6 +288,7 @@ function ReviewModal({
 function ClosureModal({
   open,
   kind,
+  onChangeKind,
   comment,
   onChangeComment,
   onCancel,
@@ -301,33 +296,68 @@ function ClosureModal({
   pending,
 }: {
   open: boolean;
-  kind: 'close' | 'escalate';
+  kind: 'close' | 'escalate' | null;
+  onChangeKind: (k: 'close' | 'escalate') => void;
   comment: string;
   onChangeComment: (s: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
   pending: boolean;
 }) {
-  const title = kind === 'close' ? 'Close this case' : 'Send the case back';
-  const body =
-    kind === 'close'
-      ? 'Explain briefly why this case is being closed. This is the final state — it cannot be reopened later.'
-      : 'Explain briefly what more needs to be done. The case returns to In progress for further work.';
   const placeholder =
-    kind === 'close'
-      ? 'Resolution confirmed. Complainant notified…'
-      : 'More investigation needed because…';
-  const confirmLabel = kind === 'close' ? 'Close case' : 'Send back';
+    kind === 'escalate'
+      ? 'More investigation needed because…'
+      : 'Resolution confirmed. Complainant notified…';
+  const confirmLabel = kind === 'escalate' ? 'Escalate and reopen' : 'Close grievance';
   const charsShort = Math.max(0, CLOSURE_MIN_CHARS - comment.trim().length);
-  const canConfirm = comment.trim().length >= CLOSURE_MIN_CHARS && !pending;
+  const canConfirm = kind !== null && comment.trim().length >= CLOSURE_MIN_CHARS && !pending;
 
   return (
     <Modal visible={open} animationType="fade" transparent onRequestClose={onCancel}>
       <View className="flex-1 bg-black/50 justify-end">
         <View className="bg-white rounded-t-3xl px-5 pt-5 pb-8">
-          <Text className="text-navy font-bold text-lg">{title}</Text>
-          <Text className="text-muted text-sm mt-1">{body}</Text>
+          <Text className="text-navy font-bold text-lg">Closure review</Text>
+          <Text className="text-muted text-sm mt-1">
+            Record the complainant's feedback and outcome. Closing is final; escalating sends the case back for more work.
+          </Text>
 
+          <Text className="text-navy font-semibold text-sm mt-4 mb-2">
+            Was the complainant satisfied?
+          </Text>
+          <View className="flex-row gap-2">
+            <Pressable
+              onPress={() => onChangeKind('close')}
+              disabled={pending}
+              className={`flex-1 border-2 rounded-xl p-3 ${
+                kind === 'close' ? 'border-state-resolved bg-emerald-50' : 'border-border bg-white'
+              }`}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: kind === 'close' }}
+            >
+              <View className="flex-row items-center gap-2 mb-1">
+                <Ionicons name="checkmark-circle" size={18} color="#047857" />
+                <Text className="text-emerald-900 font-bold text-sm">Satisfied</Text>
+              </View>
+              <Text className="text-muted text-xs">Close — no further action.</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onChangeKind('escalate')}
+              disabled={pending}
+              className={`flex-1 border-2 rounded-xl p-3 ${
+                kind === 'escalate' ? 'border-state-escalated bg-rose-50' : 'border-border bg-white'
+              }`}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: kind === 'escalate' }}
+            >
+              <View className="flex-row items-center gap-2 mb-1">
+                <Ionicons name="alert-circle" size={18} color="#be123c" />
+                <Text className="text-rose-900 font-bold text-sm">Dissatisfied</Text>
+              </View>
+              <Text className="text-muted text-xs">Escalate and reopen.</Text>
+            </Pressable>
+          </View>
+
+          <Text className="text-navy font-semibold text-sm mt-4 mb-1">Closure notes</Text>
           <TextInput
             value={comment}
             onChangeText={onChangeComment}
@@ -335,15 +365,15 @@ function ClosureModal({
             placeholderTextColor="#94a3b8"
             multiline
             maxLength={2000}
-            className="mt-4 bg-surface border border-border rounded-xl px-3 py-3 text-navy"
-            style={{ minHeight: 120, textAlignVertical: 'top' }}
-            autoFocus
+            className="bg-surface border border-border rounded-xl px-3 py-3 text-navy"
+            style={{ minHeight: 100, textAlignVertical: 'top' }}
           />
-
           <Text className="text-muted text-xs mt-2">
-            {charsShort > 0
-              ? `Needs at least ${charsShort} more character${charsShort === 1 ? '' : 's'}.`
-              : 'Ready to send.'}
+            {kind === null
+              ? 'Select an outcome above to continue.'
+              : charsShort > 0
+                ? `Needs at least ${charsShort} more character${charsShort === 1 ? '' : 's'}.`
+                : 'Ready to send.'}
           </Text>
 
           <View className="flex-row gap-2 mt-5">
@@ -358,7 +388,7 @@ function ClosureModal({
               onPress={onConfirm}
               disabled={!canConfirm}
               className={`flex-1 rounded-xl py-3 items-center ${
-                kind === 'close' ? 'bg-state-closed' : 'bg-state-escalated'
+                kind === 'escalate' ? 'bg-state-escalated' : 'bg-state-closed'
               } ${!canConfirm ? 'opacity-50' : ''}`}
             >
               <Text className="text-white font-bold text-sm">
