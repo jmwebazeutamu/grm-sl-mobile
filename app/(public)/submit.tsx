@@ -19,6 +19,13 @@ import {
 } from '@/hooks/useReference';
 import { useSubmitGrievance } from '@/hooks/useSubmitGrievance';
 
+interface Suspect {
+  first_name: string;
+  last_name: string;
+  title: string;
+  phone_number: string;
+}
+
 interface FormState {
   summary: string;
   description: string;
@@ -31,6 +38,7 @@ interface FormState {
   chiefdom_id: number | null;
   section_id: number | null;
   locality_id: number | null;
+  suspects: Suspect[];
   is_anonymous: boolean;
   first_name: string;
   last_name: string;
@@ -47,6 +55,7 @@ const INITIAL: FormState = {
   implementing_organization_id: null,
   programme_id: null,
   region_id: null, district_id: null, chiefdom_id: null, section_id: null, locality_id: null,
+  suspects: [],
   is_anonymous: true,
   first_name: '',
   last_name: '',
@@ -55,7 +64,7 @@ const INITIAL: FormState = {
   address: '',
 };
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
 
@@ -101,7 +110,7 @@ export default function Submit() {
         e.grievance_type_id = 'Pick one.';
         firstMessage ??= 'Please pick the grievance type before continuing.';
       }
-    } else if (step === 2 && !form.is_anonymous) {
+    } else if (step === 3 && !form.is_anonymous) {
       const hasAny =
         form.first_name.trim() || form.phone_number.trim() || form.email.trim();
       if (!hasAny) {
@@ -154,6 +163,14 @@ export default function Submit() {
           phone_number: form.phone_number.trim() || undefined,
           address: form.address.trim() || undefined,
         },
+        suspects: form.suspects.length > 0
+          ? form.suspects.map((s) => ({
+              first_name: s.first_name.trim() || undefined,
+              last_name: s.last_name.trim() || undefined,
+              title: s.title.trim() || undefined,
+              phone_number: s.phone_number.trim() || undefined,
+            }))
+          : undefined,
       },
       {
         onSuccess: (result) => {
@@ -210,9 +227,11 @@ export default function Submit() {
             />
           ) : null}
 
-          {step === 2 ? <StepContact form={form} patch={patch} errors={errors} /> : null}
+          {step === 2 ? <StepPersons form={form} patch={patch} /> : null}
 
-          {step === 3 ? (
+          {step === 3 ? <StepContact form={form} patch={patch} errors={errors} /> : null}
+
+          {step === 4 ? (
             <StepReview
               form={form}
               types={types.data ?? []}
@@ -372,12 +391,167 @@ function StepLocation({ form, patch, regions, districts, chiefdoms, sections, lo
   );
 }
 
-// ─── Step 3 — Contact ──────────────────────────────────────────────────────
+// ─── Step 3 — Persons this grievance is about ─────────────────────────────
+
+function StepPersons({ form, patch }: { form: FormState; patch: (k: Partial<FormState>) => void }) {
+  const [draft, setDraft] = useState<Suspect>({ first_name: '', last_name: '', title: '', phone_number: '' });
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  const canAdd =
+    draft.first_name.trim().length > 0 ||
+    draft.last_name.trim().length > 0 ||
+    draft.phone_number.trim().length > 0;
+
+  function commit() {
+    if (!canAdd) return;
+    const next: Suspect = {
+      first_name: draft.first_name.trim(),
+      last_name: draft.last_name.trim(),
+      title: draft.title.trim(),
+      phone_number: draft.phone_number.trim(),
+    };
+    if (editingIndex !== null) {
+      const copy = [...form.suspects];
+      copy[editingIndex] = next;
+      patch({ suspects: copy });
+      setEditingIndex(null);
+    } else {
+      patch({ suspects: [...form.suspects, next] });
+    }
+    setDraft({ first_name: '', last_name: '', title: '', phone_number: '' });
+  }
+
+  function startEdit(i: number) {
+    setEditingIndex(i);
+    setDraft(form.suspects[i]);
+  }
+
+  function remove(i: number) {
+    const copy = form.suspects.filter((_, j) => j !== i);
+    patch({ suspects: copy });
+    if (editingIndex === i) {
+      setEditingIndex(null);
+      setDraft({ first_name: '', last_name: '', title: '', phone_number: '' });
+    }
+  }
+
+  function cancelEdit() {
+    setEditingIndex(null);
+    setDraft({ first_name: '', last_name: '', title: '', phone_number: '' });
+  }
+
+  return (
+    <>
+      <StepHeader
+        step={2}
+        total={TOTAL_STEPS}
+        title="Person(s) this grievance is about"
+        subtitle="Optional. If you know who is involved, share what you can. Skip if you're not sure."
+      />
+
+      {form.suspects.length > 0 ? (
+        <View className="gap-2 mb-4">
+          {form.suspects.map((p, i) => (
+            <View
+              key={i}
+              className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 flex-row items-start"
+            >
+              <View className="flex-1 pr-3">
+                <Text className="text-white font-semibold">
+                  {[p.first_name, p.last_name].filter(Boolean).join(' ') || 'Unnamed person'}
+                </Text>
+                {p.title ? (
+                  <Text className="text-gold-light text-xs mt-0.5">{p.title}</Text>
+                ) : null}
+                {p.phone_number ? (
+                  <Text className="text-white/60 text-xs mt-0.5">{p.phone_number}</Text>
+                ) : null}
+              </View>
+              <Pressable onPress={() => startEdit(i)} hitSlop={8} className="p-1 mr-1">
+                <Ionicons name="create-outline" size={18} color="#e8c97a" />
+              </Pressable>
+              <Pressable onPress={() => remove(i)} hitSlop={8} className="p-1">
+                <Ionicons name="close-circle" size={20} color="#fca5a5" />
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      <View className="bg-white/5 border border-white/10 rounded-xl p-4 gap-3">
+        <Text className="text-gold-light text-xs uppercase tracking-wider">
+          {editingIndex !== null ? 'Edit person' : 'Add a person'}
+        </Text>
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <InputField
+              label="First name"
+              value={draft.first_name}
+              onChangeText={(v: string) => setDraft({ ...draft, first_name: v })}
+              maxLength={100}
+            />
+          </View>
+          <View className="flex-1">
+            <InputField
+              label="Last name"
+              value={draft.last_name}
+              onChangeText={(v: string) => setDraft({ ...draft, last_name: v })}
+              maxLength={100}
+            />
+          </View>
+        </View>
+        <InputField
+          label="Role or title"
+          value={draft.title}
+          onChangeText={(v: string) => setDraft({ ...draft, title: v })}
+          placeholder="e.g. Section Chief, Officer"
+          maxLength={100}
+        />
+        <InputField
+          label="Phone"
+          value={draft.phone_number}
+          onChangeText={(v: string) => setDraft({ ...draft, phone_number: v })}
+          keyboardType="phone-pad"
+          maxLength={30}
+        />
+
+        <View className="flex-row gap-2 mt-1">
+          {editingIndex !== null ? (
+            <Pressable
+              onPress={cancelEdit}
+              className="flex-1 border border-white/20 rounded-xl py-3 items-center"
+            >
+              <Text className="text-white font-semibold text-sm">Cancel</Text>
+            </Pressable>
+          ) : null}
+          <Pressable
+            onPress={commit}
+            disabled={!canAdd}
+            className={`flex-1 rounded-xl py-3 items-center flex-row justify-center gap-2 ${
+              canAdd ? 'bg-gold' : 'bg-gold/40'
+            }`}
+          >
+            <Ionicons
+              name={editingIndex !== null ? 'checkmark' : 'add'}
+              size={18}
+              color="#0f2044"
+            />
+            <Text className="text-navy font-bold text-sm">
+              {editingIndex !== null ? 'Save person' : 'Add person'}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </>
+  );
+}
+
+// ─── Step 4 — Contact ──────────────────────────────────────────────────────
 
 function StepContact({ form, patch, errors }: any) {
   return (
     <>
-      <StepHeader step={2} total={TOTAL_STEPS} title="Your contact details" subtitle="Optional. Officers can reach back via whichever channel you give us." />
+      <StepHeader step={3} total={TOTAL_STEPS} title="Your contact details" subtitle="Optional. Officers can reach back via whichever channel you give us." />
 
       <View className="bg-white/10 border border-white/20 rounded-xl p-4 mb-4">
         <View className="flex-row items-center justify-between">
@@ -431,7 +605,7 @@ function StepReview({ form, types, orgs, programmes, regions, districts, chiefdo
 
   return (
     <>
-      <StepHeader step={3} total={TOTAL_STEPS} title="Review and submit" subtitle="Check the details below before submitting." />
+      <StepHeader step={4} total={TOTAL_STEPS} title="Review and submit" subtitle="Check the details below before submitting." />
 
       <View className="bg-white/5 rounded-xl p-4 gap-3">
         <Row k="Summary" v={form.summary || '—'} />
@@ -444,6 +618,14 @@ function StepReview({ form, types, orgs, programmes, regions, districts, chiefdo
         {form.chiefdom_id ? <Row k="Chiefdom" v={find(chiefdoms, form.chiefdom_id)} /> : null}
         {form.section_id ? <Row k="Section" v={find(sections, form.section_id)} /> : null}
         {form.locality_id ? <Row k="Locality" v={find(localities, form.locality_id)} /> : null}
+        {form.suspects.length > 0 ? (
+          <Row
+            k="Persons it is about"
+            v={form.suspects
+              .map((s: Suspect) => [s.first_name, s.last_name].filter(Boolean).join(' ') || 'Unnamed')
+              .join(' · ')}
+          />
+        ) : null}
         <Row k="Submitter" v={form.is_anonymous ? 'Anonymous' : `${form.first_name} ${form.last_name}`.trim() || 'Named (details below)'} />
       </View>
 

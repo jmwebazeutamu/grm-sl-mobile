@@ -21,6 +21,12 @@ export interface SubmitPayload {
     phone_number?: string;
     address?: string;
   };
+  suspects?: Array<{
+    first_name?: string;
+    last_name?: string;
+    title?: string;
+    phone_number?: string;
+  }>;
   // Dummy; backend accepts the word "dev" when no reCAPTCHA is wired.
   recaptcha_token?: string;
 }
