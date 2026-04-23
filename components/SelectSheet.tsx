@@ -14,8 +14,6 @@ import {
   View,
   type View as RNView,
 } from 'react-native';
-import { ChipPicker } from '@/components/ChipPicker';
-
 interface Item { id: number; name: string; [k: string]: unknown }
 
 interface Props<T extends Item> {
@@ -29,10 +27,6 @@ interface Props<T extends Item> {
   /** When true, "— Not specified —" is offered as a null option. */
   clearable?: boolean;
   error?: string;
-  /** 'dropdown' (default) opens the anchored popover; 'chips' renders
-   *  all options inline as tappable pills — intended for short static
-   *  enums. Placeholder + `disabled` are ignored in chips mode. */
-  selectionStyle?: 'dropdown' | 'chips';
 }
 
 // Spec palette for the popover surface. Intentionally hard-coded — the
@@ -52,19 +46,6 @@ const GAP = 6;
 const ANIM_MS = 180;
 
 export function SelectSheet<T extends Item>(props: Props<T>) {
-  if (props.selectionStyle === 'chips') {
-    return (
-      <ChipPicker
-        items={props.items}
-        loading={props.loading}
-        value={props.value}
-        onChange={props.onChange}
-        label={props.label}
-        clearable={props.clearable ?? true}
-        error={props.error}
-      />
-    );
-  }
   return <DropdownField {...props} />;
 }
 
