@@ -110,7 +110,7 @@ function Hero() {
 
 function ActionCards() {
   return (
-    <View style={{ gap: 12 }}>
+    <View>
       <ActionCard
         variant="primary"
         icon="create"
@@ -119,6 +119,7 @@ function ActionCards() {
         onPress={() => router.push('/(public)/submit')}
         accessibilityLabel="Submit a grievance anonymously"
       />
+      <View style={{ height: 12 }} />
       <ActionCard
         variant="secondary"
         icon="search"
@@ -162,7 +163,6 @@ function ActionCard({
         padding: 18,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 14,
         minHeight: 64,
         opacity: pressed ? 0.92 : 1,
         shadowColor: '#000',
@@ -182,13 +182,18 @@ function ActionCard({
           justifyContent: 'center',
         }}
       >
-        <Ionicons name={icon} size={22} color={tileIconColor} />
+        <Ionicons name={icon} size={26} color={tileIconColor} />
       </View>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, marginLeft: 14 }}>
         <Text style={{ color: DEEP_NAVY, fontSize: 17, fontWeight: '700' }}>{title}</Text>
         <Text style={{ color: MUTED_LIGHT, fontSize: 13, marginTop: 2 }}>{subtitle}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={22} color={chevronColor} />
+      <Ionicons
+        name="chevron-forward"
+        size={22}
+        color={chevronColor}
+        style={{ marginLeft: 8 }}
+      />
     </Pressable>
   );
 }
@@ -207,9 +212,11 @@ function WhatHappensNext() {
       >
         WHAT HAPPENS NEXT
       </Text>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row' }}>
         <StepTile num={1} label="You submit" />
+        <View style={{ width: 8 }} />
         <StepTile num={2} label="We review" />
+        <View style={{ width: 8 }} />
         <StepTile num={3} label="You're updated" />
       </View>
     </View>
@@ -270,7 +277,6 @@ function HotlineCard() {
         paddingVertical: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
         minHeight: 64,
         opacity: pressed ? 0.9 : 1,
         shadowColor: '#000',
@@ -292,7 +298,7 @@ function HotlineCard() {
       >
         <Ionicons name="call" size={20} color={AMBER} />
       </View>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, marginLeft: 12 }}>
         <Text style={{ fontSize: 12, color: MUTED_LIGHT }}>Prefer to talk to someone?</Text>
         <Text style={{ fontSize: 15, fontWeight: '700', color: DEEP_NAVY, marginTop: 1 }}>
           Call {HOTLINE} · Free
