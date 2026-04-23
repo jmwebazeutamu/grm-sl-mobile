@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AccountAvatarMenu } from '@/components/AccountAvatarMenu';
 import { Card } from '@/components/Card';
 import { SlaDot } from '@/components/SlaDot';
 import { StateBadge } from '@/components/StateBadge';
@@ -27,7 +28,10 @@ export default function GrievancesList() {
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <View className="bg-white px-6 pt-4 pb-3 border-b border-border">
-        <Text className="text-navy text-xl font-bold">Grievances</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="text-navy text-xl font-bold">Grievances</Text>
+          <AccountAvatarMenu theme="light" />
+        </View>
 
         <View className="mt-3 bg-surface rounded-xl flex-row items-center px-3">
           <Ionicons name="search" size={18} color="#94a3b8" />

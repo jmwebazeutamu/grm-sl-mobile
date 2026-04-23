@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AccountAvatarMenu } from '@/components/AccountAvatarMenu';
 import { ActionComposer } from '@/components/ActionComposer';
 import { AttachmentsPanel } from '@/components/AttachmentsPanel';
 import { Card } from '@/components/Card';
@@ -19,11 +20,12 @@ export default function GrievanceDetail() {
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
-      <View className="bg-white px-6 pt-3 pb-3 border-b border-border">
+      <View className="bg-white px-6 pt-3 pb-3 border-b border-border flex-row items-center justify-between">
         <Pressable onPress={() => router.back()} className="flex-row items-center gap-2">
           <Ionicons name="chevron-back" size={20} color="#0f2044" />
           <Text className="text-navy text-sm font-medium">Back</Text>
         </Pressable>
+        <AccountAvatarMenu theme="light" />
       </View>
 
       {isLoading ? (

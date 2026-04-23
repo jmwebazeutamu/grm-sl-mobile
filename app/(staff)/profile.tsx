@@ -1,48 +1,42 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AccountAvatarMenu } from '@/components/AccountAvatarMenu';
 import { Card } from '@/components/Card';
-import { api } from '@/lib/api';
-import { unregisterFromPush } from '@/lib/push';
+import { performSignOut } from '@/lib/auth';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function Profile() {
   const user = useAuthStore((s) => s.user);
-  const clearSession = useAuthStore((s) => s.clearSession);
 
-  async function logout() {
+  function logout() {
     Alert.alert('Sign out', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign out',
-        style: 'destructive',
-        onPress: async () => {
-          await unregisterFromPush();
-          try { await api.post('/auth/logout'); } catch { /* fall through */ }
-          await clearSession();
-          router.replace('/');
-        },
-      },
+      { text: 'Sign out', style: 'destructive', onPress: () => { void performSignOut(); } },
     ]);
   }
 
   return (
     <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
       <ScrollView className="flex-1">
-        <View className="bg-navy px-6 pt-6 pb-10 rounded-b-3xl items-center">
-          <View className="w-16 h-16 rounded-full bg-gold items-center justify-center mb-3">
-            <Text className="text-navy text-2xl font-bold">
-              {user?.name?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'}
-            </Text>
+        <View className="bg-navy px-6 pt-4 pb-10 rounded-b-3xl">
+          <View className="flex-row justify-end mb-2">
+            <AccountAvatarMenu theme="dark" />
           </View>
-          <Text className="text-white text-xl font-bold">{user?.name}</Text>
-          <Text className="text-gold-light text-sm mt-0.5">{user?.roles[0] ?? 'user'}</Text>
-          {user?.organization ? (
-            <Text className="text-white/70 text-xs mt-0.5">
-              {user.organization.name}
-            </Text>
-          ) : null}
+          <View className="items-center">
+            <View className="w-16 h-16 rounded-full bg-gold items-center justify-center mb-3">
+              <Text className="text-navy text-2xl font-bold">
+                {user?.name?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'}
+              </Text>
+            </View>
+            <Text className="text-white text-xl font-bold">{user?.name}</Text>
+            <Text className="text-gold-light text-sm mt-0.5">{user?.roles[0] ?? 'user'}</Text>
+            {user?.organization ? (
+              <Text className="text-white/70 text-xs mt-0.5">
+                {user.organization.name}
+              </Text>
+            ) : null}
+          </View>
         </View>
 
         <View className="px-6 -mt-6">

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AccountAvatarMenu } from '@/components/AccountAvatarMenu';
 import { Card } from '@/components/Card';
 import { StateBadge } from '@/components/StateBadge';
 import { useDashboard } from '@/hooks/useDashboard';
@@ -27,13 +28,18 @@ export default function Dashboard() {
       >
         {/* Header */}
         <View className="bg-navy px-6 pt-4 pb-8 rounded-b-3xl">
-          <Text className="text-gold-light text-sm">{greeting},</Text>
-          <Text className="text-white text-2xl font-bold">{user?.name?.split(' ')[0] ?? 'there'}</Text>
-          {user?.organization ? (
-            <Text className="text-white/70 text-sm mt-1">
-              {user.organization.acronym ?? user.organization.name}
-            </Text>
-          ) : null}
+          <View className="flex-row items-start justify-between">
+            <View className="flex-1">
+              <Text className="text-gold-light text-sm">{greeting},</Text>
+              <Text className="text-white text-2xl font-bold">{user?.name?.split(' ')[0] ?? 'there'}</Text>
+              {user?.organization ? (
+                <Text className="text-white/70 text-sm mt-1">
+                  {user.organization.acronym ?? user.organization.name}
+                </Text>
+              ) : null}
+            </View>
+            <AccountAvatarMenu theme="dark" />
+          </View>
         </View>
 
         {isLoading || !data ? (
