@@ -7,8 +7,10 @@ import {
   FlatList,
   Modal,
   Pressable,
+  StyleSheet,
   Text,
   TextInput,
+  TouchableHighlight,
   View,
   type View as RNView,
 } from 'react-native';
@@ -424,50 +426,69 @@ function OptionRow({
   italic?: boolean;
   onPress: () => void;
 }) {
+  // TouchableHighlight + static StyleSheet — avoids the function-form
+  // Pressable style bug that collapses row layout on some Android devices.
   return (
-    <Pressable
+    <TouchableHighlight
       onPress={onPress}
+      underlayColor={POP_HOVER_BG}
       accessibilityRole="menuitem"
       accessibilityState={{ selected }}
       accessibilityLabel={label}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 11,
-        paddingHorizontal: 16,
-        minHeight: 44,
-        backgroundColor: selected
-          ? POP_SEL_BG
-          : pressed
-            ? POP_HOVER_BG
-            : 'transparent',
-      })}
+      style={selected ? rowStyles.rowSelected : rowStyles.row}
     >
-      {/* 3px left bar: amber when selected, transparent otherwise so rows
-           align identically regardless of selection. */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 3,
-          backgroundColor: selected ? AMBER : 'transparent',
-        }}
-      />
-      <Text
-        style={{
-          flex: 1,
-          fontSize: 15,
-          color: italic ? POP_MUTED : POP_TEXT,
-          fontWeight: selected ? '600' : '400',
-          fontStyle: italic ? 'italic' : 'normal',
-        }}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-      {selected ? <Ionicons name="checkmark" size={18} color={AMBER} /> : null}
-    </Pressable>
+      <View style={rowStyles.inner}>
+        <Text
+          style={[
+            rowStyles.label,
+            italic ? rowStyles.labelItalic : rowStyles.labelNormal,
+            selected ? rowStyles.labelSelected : null,
+          ]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+        {selected ? (
+          <Ionicons
+            name="checkmark"
+            size={18}
+            color={AMBER}
+            style={rowStyles.check}
+          />
+        ) : null}
+      </View>
+    </TouchableHighlight>
   );
 }
+
+const rowStyles = StyleSheet.create({
+  row: {
+    // 3px transparent left border so unselected rows align horizontally
+    // with the amber left bar on the selected row.
+    borderLeftWidth: 3,
+    borderLeftColor: 'transparent',
+    backgroundColor: POP_BG,
+  },
+  rowSelected: {
+    borderLeftWidth: 3,
+    borderLeftColor: AMBER,
+    backgroundColor: POP_SEL_BG,
+  },
+  inner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 11,
+    // padding-left 13 = 16 - 3 border reserve so text stays aligned.
+    paddingLeft: 13,
+    paddingRight: 16,
+    minHeight: 44,
+  },
+  label: {
+    flex: 1,
+    fontSize: 15,
+  },
+  labelNormal: { color: POP_TEXT, fontWeight: '400' },
+  labelItalic: { color: POP_MUTED, fontWeight: '400', fontStyle: 'italic' },
+  labelSelected: { fontWeight: '600' },
+  check: { marginLeft: 8 },
+});
