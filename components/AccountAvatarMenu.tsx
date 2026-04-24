@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Alert,
+  Animated,
   Dimensions,
   Image,
   Modal,
@@ -16,23 +18,31 @@ import { useAuthStore, type AuthUser } from '@/stores/authStore';
 
 const AVATAR_SIZE = 32;
 
-// Spec palette — intentionally inline; some values don't exist in the
-// tailwind theme and the design requires an exact match.
+// Spec palette — hard-coded because these tokens don't exist in the
+// tailwind theme yet and the design requires an exact match.
 const AMBER = '#d4a43a';
+const AMBER_SOFT = '#fdf4db';
 const DEEP_NAVY = '#0a2342';
-const NAVY_BG = '#0d2a4d';
-const MUTED = '#6b7f97';
-const DANGER = '#ef4444';
-const DIVIDER = '#e4e8ee';
-const HOVER = '#eef1f5';
-const MENU_SURFACE = '#ffffff';
+const TEXT = '#0d2a4d';
+const MUTED = '#7b8aa0';
+const MUTED_LIGHTER = '#93a0b5';
+const ICON_TILE_BG = '#f1f4f8';
+const ICON_TILE_FG = '#5a6b82';
+const DIVIDER = '#eef1f5';
+const ROW_PRESSED = '#f5f6f8';
+const DANGER = '#c43b3b';
+const DANGER_SOFT = '#fbe7e7';
+const BACKDROP_DIM = 'rgba(10,35,66,0.35)';
+
+// Confirmation bottom-sheet palette (kept from the previous implementation).
 const SCRIM_SHEET = 'rgba(6,18,36,0.55)';
 const GRABBER = '#c5ccd6';
 const DANGER_TINT = 'rgba(239,68,68,0.12)';
+const DANGER_BRIGHT = '#ef4444';
 
 interface Props {
-  /** Colour theme for the avatar border/ring. The avatar itself is amber
-   *  in both variants so it stays legible over either background. */
+  /** Colour theme for the avatar ring. The avatar itself is amber in
+   *  both variants so it stays legible over either background. */
   theme?: 'dark' | 'light';
 }
 
@@ -48,14 +58,16 @@ export function AccountAvatarMenu({ theme = 'dark' }: Props) {
   const photo = (user as AuthUser & { photo_url?: string | null } | null)?.photo_url ?? null;
 
   const openMenu = useCallback(() => {
-    avatarRef.current?.measureInWindow((x, y, width, height) => {
-      // measureInWindow returns screen coords, which is what the Modal
-      // overlay uses. Anchor the menu's right edge to the avatar's right
-      // edge so the menu extends leftward from the avatar.
+    avatarRef.current?.measureInWindow((x, y, width) => {
       const screenW = Dimensions.get('window').width;
       setAnchor({
-        top: y + height + 8,
-        right: Math.max(8, screenW - (x + width)),
+        // Menu sits a little below the avatar bottom edge.
+        top: y + width + 8,
+        // Spec's "right: 12px from viewport" — the menu's right edge is
+        // anchored 12px from the screen edge regardless of the avatar's
+        // exact x coord. Fall back to aligning with the avatar if the
+        // avatar is somehow further in than 12px.
+        right: Math.min(12, Math.max(8, screenW - (x + width))),
       });
       setMenuOpen(true);
     });
@@ -68,10 +80,33 @@ export function AccountAvatarMenu({ theme = 'dark' }: Props) {
     router.push('/(staff)/profile');
   }
 
+  function onNotifications() {
+    closeMenu();
+    // No dedicated in-app notifications screen exists yet; push
+    // notifications land in the Android system tray. Keep the entry
+    // point for discoverability and tell the user what to expect.
+    setTimeout(() => {
+      Alert.alert(
+        'Notifications',
+        'Case updates are delivered as push notifications. Check your phone\'s notification shade for recent alerts.',
+      );
+    }, 120);
+  }
+
+  function onHelp() {
+    closeMenu();
+    setTimeout(() => {
+      Alert.alert(
+        'Help & support',
+        'Call the GRM hotline on 8515 (free), or ask your GRM administrator.',
+      );
+    }, 120);
+  }
+
   function onSignOutTap() {
     closeMenu();
-    // Small delay lets the dropdown finish fading before the sheet slides
-    // up — otherwise they visually crash into each other.
+    // Let the menu finish fading out before the sheet slides up so they
+    // don't visually collide.
     setTimeout(() => setConfirmOpen(true), 120);
   }
 
@@ -95,12 +130,19 @@ export function AccountAvatarMenu({ theme = 'dark' }: Props) {
         onPress={openMenu}
         accessibilityRole="button"
         accessibilityLabel="Account menu"
-        accessibilityHint="Opens the account menu with sign out"
+        accessibilityHint="Opens the account menu"
         accessibilityState={{ expanded: menuOpen }}
         hitSlop={8}
-        style={[
+        style={({ pressed }) => [
           styles.avatar,
-          { backgroundColor: AMBER, borderColor: theme === 'light' ? DIVIDER : 'rgba(255,255,255,0.2)' },
+          {
+            backgroundColor: AMBER,
+            borderColor:
+              theme === 'light' ? DIVIDER : 'rgba(255,255,255,0.2)',
+          },
+          // Link the avatar's visual state to the menu's open state so
+          // the user sees the connection between trigger and surface.
+          (menuOpen || pressed) ? styles.avatarPressed : null,
         ]}
       >
         {photo ? (
@@ -110,12 +152,14 @@ export function AccountAvatarMenu({ theme = 'dark' }: Props) {
         )}
       </Pressable>
 
-      <DropdownMenu
+      <ProfileMenu
         open={menuOpen}
         anchor={anchor}
         user={user}
         onClose={closeMenu}
         onViewProfile={onViewProfile}
+        onNotifications={onNotifications}
+        onHelp={onHelp}
         onSignOut={onSignOutTap}
       />
 
@@ -129,12 +173,16 @@ export function AccountAvatarMenu({ theme = 'dark' }: Props) {
   );
 }
 
-function DropdownMenu({
+// ─── Profile menu ───────────────────────────────────────────────────────────
+
+function ProfileMenu({
   open,
   anchor,
   user,
   onClose,
   onViewProfile,
+  onNotifications,
+  onHelp,
   onSignOut,
 }: {
   open: boolean;
@@ -142,106 +190,185 @@ function DropdownMenu({
   user: AuthUser;
   onClose: () => void;
   onViewProfile: () => void;
+  onNotifications: () => void;
+  onHelp: () => void;
   onSignOut: () => void;
 }) {
-  // Close on route-change side-effect: expo-router navigation tears down
-  // the modal when the parent unmounts, so no extra subscription needed.
+  const anim = useRef(new Animated.Value(0)).current;
+  const [rendered, setRendered] = useState(false);
+
+  useEffect(() => {
+    if (open) setRendered(true);
+    Animated.timing(anim, {
+      toValue: open ? 1 : 0,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (!open && finished) setRendered(false);
+    });
+  }, [anim, open]);
+
   useEffect(() => {
     if (!open) return;
+    if (typeof document === 'undefined') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    // web-only — RN Modal already handles Android back on native.
-    if (typeof document !== 'undefined') {
-      document.addEventListener('keydown', onKey);
-      return () => document.removeEventListener('keydown', onKey);
-    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  if (!rendered || !anchor) return null;
+
+  const opacity = anim;
+  const translateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-4, 0],
+  });
+
+  const role = user.roles?.[0] ?? 'user';
+  const initials = getInitials(user);
+
   return (
-    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.fullscreenScrim} onPress={onClose} accessible={false}>
-        <View
-          // stopPropagation: tapping the menu card itself must not close it
-          onStartShouldSetResponder={() => true}
-          style={[
-            styles.menu,
-            anchor
-              ? { top: anchor.top, right: anchor.right }
-              : { top: 56, right: 16 },
-          ]}
-          accessibilityRole="menu"
-          accessibilityLabel="Account menu"
-        >
-          <View style={styles.menuHeader}>
-            <Text style={styles.menuHeaderName} numberOfLines={1}>
+    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+      <Animated.View style={[StyleSheet.absoluteFill, styles.dim, { opacity }]} pointerEvents="box-none">
+        <Pressable
+          accessibilityLabel="Close account menu"
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+        />
+      </Animated.View>
+
+      <Animated.View
+        accessibilityRole="menu"
+        accessibilityLabel="Account menu"
+        onStartShouldSetResponder={() => true}
+        style={[
+          styles.menu,
+          { top: anchor.top, right: anchor.right },
+          { opacity, transform: [{ translateY }] },
+        ]}
+      >
+        {/* Identity header */}
+        <View style={styles.identityBlock}>
+          <View style={styles.identityAvatar}>
+            <Text style={styles.identityAvatarText}>{initials}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.identityName} numberOfLines={1}>
               {user.name}
             </Text>
-            <Text style={styles.menuHeaderEmail} numberOfLines={1}>
+            <Text style={styles.identityEmail} numberOfLines={1}>
               {user.email ?? user.username}
             </Text>
           </View>
+        </View>
 
-          <MenuItem
-            icon="person-circle-outline"
+        <View style={styles.divider} />
+
+        {/* Primary actions */}
+        <View style={styles.actionGroup}>
+          <ActionRow
+            icon="person-outline"
             label="View profile"
+            subtitle={role}
             onPress={onViewProfile}
           />
+          <ActionRow
+            icon="notifications-outline"
+            label="Notifications"
+            onPress={onNotifications}
+          />
+          <ActionRow
+            icon="help-circle-outline"
+            label="Help & support"
+            onPress={onHelp}
+          />
+        </View>
 
-          <View style={styles.menuDivider} />
+        <View style={styles.divider} />
 
-          <MenuItem
+        {/* Destructive action */}
+        <View style={styles.actionGroup}>
+          <ActionRow
             icon="log-out-outline"
             label="Sign out"
             danger
             onPress={onSignOut}
+            accessibilityLabel="Sign out of your account"
           />
         </View>
-      </Pressable>
+      </Animated.View>
     </Modal>
   );
 }
 
-function MenuItem({
+function ActionRow({
   icon,
   label,
+  subtitle,
   onPress,
   danger,
+  accessibilityLabel,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
+  subtitle?: string;
   onPress: () => void;
   danger?: boolean;
+  accessibilityLabel?: string;
 }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="menuitem"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       style={({ pressed }) => [
-        styles.menuItem,
-        pressed ? { backgroundColor: HOVER } : null,
+        styles.actionRow,
+        pressed
+          ? { backgroundColor: danger ? DANGER_SOFT : ROW_PRESSED }
+          : null,
       ]}
     >
-      <Ionicons
-        name={icon}
-        size={18}
-        color={danger ? DANGER : DEEP_NAVY}
-        style={{ marginRight: 10 }}
-      />
-      <Text
+      <View
         style={[
-          styles.menuItemText,
+          styles.actionIconTile,
           danger
-            ? { color: DANGER, fontWeight: '600' }
-            : { color: DEEP_NAVY, fontWeight: '500' },
+            ? { backgroundColor: DANGER_SOFT }
+            : { backgroundColor: ICON_TILE_BG },
         ]}
       >
-        {label}
-      </Text>
+        <Ionicons
+          name={icon}
+          size={16}
+          color={danger ? DANGER : ICON_TILE_FG}
+        />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={[
+            styles.actionLabel,
+            danger ? { color: DANGER } : null,
+          ]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+        {subtitle ? (
+          <Text style={styles.actionSubtitle} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      {/* Destructive actions don't navigate — no chevron. */}
+      {!danger ? (
+        <Ionicons name="chevron-forward" size={14} color={MUTED_LIGHTER} />
+      ) : null}
     </Pressable>
   );
 }
+
+// ─── Confirmation sheet (unchanged visual treatment) ────────────────────────
 
 function ConfirmSheet({
   open,
@@ -268,7 +395,7 @@ function ConfirmSheet({
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onCancel}>
       <Pressable
-        style={[styles.fullscreenScrim, { backgroundColor: SCRIM_SHEET }]}
+        style={[StyleSheet.absoluteFill, { backgroundColor: SCRIM_SHEET, justifyContent: 'flex-end' }]}
         onPress={onCancel}
         accessibilityLabel="Dismiss sign out confirmation"
       >
@@ -281,7 +408,7 @@ function ConfirmSheet({
           <View style={styles.grabber} />
 
           <View style={styles.sheetIconWrap}>
-            <Ionicons name="log-out-outline" size={24} color={DANGER} />
+            <Ionicons name="log-out-outline" size={24} color={DANGER_BRIGHT} />
           </View>
 
           <Text nativeID="signout-title" style={styles.sheetTitle}>
@@ -295,11 +422,11 @@ function ConfirmSheet({
             <Pressable
               onPress={onCancel}
               disabled={signingOut}
-              style={[styles.sheetBtn, { backgroundColor: HOVER }]}
+              style={[styles.sheetBtn, { backgroundColor: ROW_PRESSED }]}
               accessibilityRole="button"
               accessibilityLabel="Cancel"
             >
-              <Text style={[styles.sheetBtnText, { color: DEEP_NAVY, fontWeight: '600' }]}>
+              <Text style={[styles.sheetBtnText, { color: TEXT, fontWeight: '600' }]}>
                 Cancel
               </Text>
             </Pressable>
@@ -308,7 +435,7 @@ function ConfirmSheet({
               disabled={signingOut}
               style={[
                 styles.sheetBtn,
-                { backgroundColor: DANGER, opacity: signingOut ? 0.6 : 1 },
+                { backgroundColor: DANGER_BRIGHT, opacity: signingOut ? 0.6 : 1 },
               ]}
               accessibilityRole="button"
               accessibilityLabel="Sign out"
@@ -342,6 +469,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
   },
+  avatarPressed: { opacity: 0.8 },
   avatarImg: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
@@ -353,52 +481,96 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
-  fullscreenScrim: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    justifyContent: 'flex-end',
-  },
+
+  dim: { backgroundColor: BACKDROP_DIM },
+
   menu: {
     position: 'absolute',
-    minWidth: 248,
-    backgroundColor: MENU_SURFACE,
-    borderRadius: 12,
-    paddingVertical: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.35,
+    width: 276,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    overflow: 'hidden',
+    // Primary drop shadow + subtle secondary. RN flattens multiple
+    // shadow layers on iOS; on Android elevation gives the equivalent
+    // raised effect.
+    shadowColor: '#0a2342',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.22,
     shadowRadius: 40,
-    elevation: 12,
+    elevation: 18,
   },
-  menuHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 10,
-  },
-  menuHeaderName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: NAVY_BG,
-  },
-  menuHeaderEmail: {
-    fontSize: 12,
-    color: MUTED,
-    marginTop: 2,
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: DIVIDER,
-    marginVertical: 4,
-  },
-  menuItem: {
+
+  // Identity header
+  identityBlock: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 13,
-    paddingHorizontal: 16,
+    gap: 12,
+    padding: 14,
+    backgroundColor: AMBER_SOFT,
   },
-  menuItemText: {
-    fontSize: 13,
+  identityAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: AMBER,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Amber-soft halo approximating the spec's box-shadow 0 0 0 3px ring.
+    borderWidth: 3,
+    borderColor: AMBER_SOFT,
   },
+  identityAvatarText: {
+    color: DEEP_NAVY,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  identityName: {
+    color: TEXT,
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  identityEmail: {
+    color: MUTED,
+    fontSize: 11.5,
+    marginTop: 2,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: DIVIDER,
+  },
+
+  // Action rows
+  actionGroup: {
+    paddingVertical: 4,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  actionIconTile: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionLabel: {
+    color: TEXT,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  actionSubtitle: {
+    color: MUTED,
+    fontSize: 11.5,
+    marginTop: 1,
+  },
+
+  // Confirmation sheet (kept)
   sheet: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
@@ -427,7 +599,7 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: NAVY_BG,
+    color: TEXT,
     textAlign: 'center',
   },
   sheetBody: {
