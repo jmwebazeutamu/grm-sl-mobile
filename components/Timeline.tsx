@@ -329,7 +329,12 @@ function classify(entry: TimelineEntry): EventType {
     const outcome = entry.data.outcome;
     const toLabel = String(entry.data.to_label ?? '').toLowerCase();
     if (outcome === 'dissatisfied' || toLabel.includes('reopen')) return 'reopened';
-    if (outcome === 'satisfied' || to === 'closed' || to === 'resolved') return 'resolution';
+    // state → resolved always piggybacks on a preceding `action` with
+    // type=resolve that already carries the summary; rendering both as
+    // resolution banners double-stamps the timeline. Keep the state
+    // transition as a status chip so the action's banner stands alone.
+    if (to === 'resolved') return 'status';
+    if (outcome === 'satisfied' || to === 'closed') return 'resolution';
     return 'status';
   }
 
