@@ -8,9 +8,9 @@
     "userInterfaceStyle": "light",
     "icon": "./assets/images/icon.png",
     "splash": {
-      "image": "./assets/images/acc-logo.png",
+      "image": "./assets/images/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0d2a4d"
+      "backgroundColor": "#ffffff"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -23,7 +23,9 @@
       "package": "sl.gov.grm.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#0f2044"
+        "backgroundImage": "./assets/images/adaptive-bg.png",
+        "monochromeImage": "./assets/images/adaptive-mono.png",
+        "backgroundColor": "#1eb53a"
       }
     },
     "web": {
@@ -44,7 +46,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
-          "color": "#0f2044"
+          "color": "#0072c6"
         }
       ],
       [

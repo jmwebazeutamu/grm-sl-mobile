@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- GRM launcher icon master.
+       Sierra Leone flag bands (green/white/blue) with a white speech
+       bubble containing 3 blue dots — "voice" / "speak up". PNG exports
+       for Expo icon / adaptive-icon / adaptive-bg / monochrome /
+       notification-icon live alongside; regenerate with gen_icons.py. -->
+  <rect x="0" y="0"   width="1024" height="348"  fill="#1EB53A"/>
+  <rect x="0" y="348" width="1024" height="328"  fill="#FFFFFF"/>
+  <rect x="0" y="676" width="1024" height="348"  fill="#0072C6"/>
+  <g>
+    <circle cx="512" cy="512" r="225" fill="#FFFFFF"/>
+    <path d="M450 716 L350 800 L390 690 Z" fill="#FFFFFF"/>
+  </g>
+  <g fill="#005BA2">
+    <circle cx="430" cy="512" r="22"/>
+    <circle cx="512" cy="512" r="22"/>
+    <circle cx="594" cy="512" r="22"/>
+  </g>
+</svg>
