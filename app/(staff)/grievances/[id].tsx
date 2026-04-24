@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AccountAvatarMenu } from '@/components/AccountAvatarMenu';
-import { ActionComposer } from '@/components/ActionComposer';
+import { ActionLauncher } from '@/components/ActionSheet';
 import { AttachmentsPanel } from '@/components/AttachmentsPanel';
 import { Card } from '@/components/Card';
-import { DecisionBar } from '@/components/DecisionBar';
 import { SlaDot } from '@/components/SlaDot';
 import { StateBadge } from '@/components/StateBadge';
 import { Timeline } from '@/components/Timeline';
@@ -38,10 +37,7 @@ export default function GrievanceDetail() {
           <Text className="text-navy font-bold text-base mt-2">Unable to load case</Text>
         </View>
       ) : (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          className="flex-1"
-        >
+        <View className="flex-1">
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
           <View className="flex-row items-start justify-between gap-3">
             <View className="flex-1">
@@ -170,23 +166,16 @@ export default function GrievanceDetail() {
           <Timeline events={data.timeline} />
         </ScrollView>
 
-        {/* Decisions (review, closure) — above the free-form composer */}
-        <DecisionBar
+        {/* Single primary launcher. Opens a bottom sheet that holds
+            every action (review, update, resolve, closure review). No
+            input fields ride at the bottom of the screen — the sheet
+            handles keyboard and destructive-action gating internally. */}
+        <ActionLauncher
           grievanceId={data.id}
           state={data.state}
           capabilities={data.capabilities}
         />
-
-        {/* Action composer — only on states where posting an action is a
-            legal workflow move. Super-admin's Gate::before bypass on the API
-            side means can_edit can be true even on closed/rejected/etc.; this
-            client guard stops the UI offering the composer when the server
-            would reject the transition. */}
-        {data.capabilities.can_edit &&
-          ['in_progress', 'reopened', 'org_classified'].includes(data.state) ? (
-          <ActionComposer grievanceId={data.id} />
-        ) : null}
-        </KeyboardAvoidingView>
+        </View>
       )}
     </SafeAreaView>
   );
