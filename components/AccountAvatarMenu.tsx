@@ -10,6 +10,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TouchableHighlight,
   View,
   type View as RNView,
 } from 'react-native';
@@ -133,16 +134,17 @@ export function AccountAvatarMenu({ theme = 'dark' }: Props) {
         accessibilityHint="Opens the account menu"
         accessibilityState={{ expanded: menuOpen }}
         hitSlop={8}
-        style={({ pressed }) => [
+        // Static style array — no function-form. Open-state visual tie
+        // comes from menuOpen alone; press feedback is the small tap on
+        // Pressable's default opacity.
+        style={[
           styles.avatar,
           {
             backgroundColor: AMBER,
             borderColor:
               theme === 'light' ? DIVIDER : 'rgba(255,255,255,0.2)',
           },
-          // Link the avatar's visual state to the menu's open state so
-          // the user sees the connection between trigger and surface.
-          (menuOpen || pressed) ? styles.avatarPressed : null,
+          menuOpen ? styles.avatarPressed : null,
         ]}
       >
         {photo ? (
@@ -318,53 +320,50 @@ function ActionRow({
   danger?: boolean;
   accessibilityLabel?: string;
 }) {
+  // TouchableHighlight + static StyleSheet. Pressable with a function-
+  // form style prop (style={({pressed}) => (...)}) silently collapses
+  // row layout on some Android builds — same bug that hit the landing
+  // page cards and the popover option rows. Static style avoids it.
   return (
-    <Pressable
+    <TouchableHighlight
       onPress={onPress}
+      underlayColor={danger ? DANGER_SOFT : ROW_PRESSED}
       accessibilityRole="menuitem"
       accessibilityLabel={accessibilityLabel ?? label}
-      style={({ pressed }) => [
-        styles.actionRow,
-        pressed
-          ? { backgroundColor: danger ? DANGER_SOFT : ROW_PRESSED }
-          : null,
-      ]}
+      style={styles.actionRowWrap}
     >
-      <View
-        style={[
-          styles.actionIconTile,
-          danger
-            ? { backgroundColor: DANGER_SOFT }
-            : { backgroundColor: ICON_TILE_BG },
-        ]}
-      >
-        <Ionicons
-          name={icon}
-          size={16}
-          color={danger ? DANGER : ICON_TILE_FG}
-        />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text
+      <View style={styles.actionRow}>
+        <View
           style={[
-            styles.actionLabel,
-            danger ? { color: DANGER } : null,
+            styles.actionIconTile,
+            { backgroundColor: danger ? DANGER_SOFT : ICON_TILE_BG },
           ]}
-          numberOfLines={1}
         >
-          {label}
-        </Text>
-        {subtitle ? (
-          <Text style={styles.actionSubtitle} numberOfLines={1}>
-            {subtitle}
+          <Ionicons
+            name={icon}
+            size={16}
+            color={danger ? DANGER : ICON_TILE_FG}
+          />
+        </View>
+        <View style={styles.actionTextCol}>
+          <Text
+            style={[styles.actionLabel, danger ? { color: DANGER } : null]}
+            numberOfLines={1}
+          >
+            {label}
           </Text>
+          {subtitle ? (
+            <Text style={styles.actionSubtitle} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ) : null}
+        </View>
+        {/* Destructive rows execute — no chevron. */}
+        {!danger ? (
+          <Ionicons name="chevron-forward" size={14} color={MUTED_LIGHTER} />
         ) : null}
       </View>
-      {/* Destructive actions don't navigate — no chevron. */}
-      {!danger ? (
-        <Ionicons name="chevron-forward" size={14} color={MUTED_LIGHTER} />
-      ) : null}
-    </Pressable>
+    </TouchableHighlight>
   );
 }
 
@@ -545,10 +544,15 @@ const styles = StyleSheet.create({
   actionGroup: {
     paddingVertical: 4,
   },
+  actionRowWrap: {
+    // TouchableHighlight paints its underlayColor on its own bounds, so
+    // give it the outer padding and let the inner row lay its children
+    // out horizontally.
+    backgroundColor: 'transparent',
+  },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
@@ -558,16 +562,25 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
+    marginRight: 12,
+  },
+  actionTextCol: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: 8,
   },
   actionLabel: {
     color: TEXT,
     fontSize: 14,
     fontWeight: '600',
+    lineHeight: 17,
   },
   actionSubtitle: {
     color: MUTED,
     fontSize: 11.5,
-    marginTop: 1,
+    marginTop: 2,
+    lineHeight: 14,
   },
 
   // Confirmation sheet (kept)
