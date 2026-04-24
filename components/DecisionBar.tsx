@@ -1,6 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useBeginClosure,
@@ -244,7 +253,10 @@ function ReviewModal({
 
   return (
     <Modal visible={open} animationType="fade" transparent onRequestClose={onCancel}>
-      <View className="flex-1 bg-black/50 justify-end">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1 bg-black/50 justify-end"
+      >
         <View
           className="bg-white rounded-t-3xl px-5 pt-5"
           style={{ paddingBottom: insets.bottom + 24 }}
@@ -285,7 +297,7 @@ function ReviewModal({
             </Pressable>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -320,7 +332,10 @@ function ClosureModal({
 
   return (
     <Modal visible={open} animationType="fade" transparent onRequestClose={onCancel}>
-      <View className="flex-1 bg-black/50 justify-end">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1 bg-black/50 justify-end"
+      >
         <View
           className="bg-white rounded-t-3xl px-5 pt-5"
           style={{ paddingBottom: insets.bottom + 24 }}
@@ -406,7 +421,7 @@ function ClosureModal({
             </Pressable>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -432,7 +447,10 @@ function ResolveModal({
 
   return (
     <Modal visible={open} animationType="fade" transparent onRequestClose={onCancel}>
-      <View className="flex-1 bg-black/50 justify-end">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1 bg-black/50 justify-end"
+      >
         <View
           className="bg-white rounded-t-3xl px-5 pt-5"
           style={{ paddingBottom: insets.bottom + 24 }}
@@ -483,7 +501,7 @@ function ResolveModal({
             </Pressable>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

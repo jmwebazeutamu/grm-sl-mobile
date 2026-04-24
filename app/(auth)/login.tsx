@@ -1,7 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api, apiErrorMessage } from '@/lib/api';
 import { registerForPush } from '@/lib/push';
@@ -38,18 +47,25 @@ export default function Login() {
   return (
     <SafeAreaView className="flex-1 bg-navy">
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <View className="flex-1 px-6 py-8 justify-between">
+        {/* ScrollView wraps the form so the keyboard can push content up
+            and the user can still reach the Sign-in button when focus
+            is on the password field. */}
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        >
           <Link href="/" asChild>
-            <Pressable className="flex-row items-center gap-2">
+            <Pressable className="flex-row items-center gap-2 py-2">
               <Ionicons name="chevron-back" size={20} color="#e8c97a" />
               <Text className="text-gold-light text-sm">Back</Text>
             </Pressable>
           </Link>
 
-          <View>
+          <View className="mt-8">
             <View className="items-center mb-6">
               <Image
                 source={ACC_LOGO}
@@ -78,6 +94,7 @@ export default function Login() {
                   autoComplete="username"
                   placeholder="e.g. mlebbie"
                   placeholderTextColor="#94a3b8"
+                  returnKeyType="next"
                   className="text-white text-base py-1"
                 />
               </View>
@@ -91,6 +108,8 @@ export default function Login() {
                   autoComplete="password"
                   placeholder="••••••••"
                   placeholderTextColor="#94a3b8"
+                  returnKeyType="go"
+                  onSubmitEditing={() => username && password ? submit() : null}
                   className="text-white text-base py-1"
                 />
               </View>
@@ -109,10 +128,12 @@ export default function Login() {
             </View>
           </View>
 
-          <Text className="text-white/40 text-xs text-center">
+          <View style={{ flex: 1 }} />
+
+          <Text className="text-white/40 text-xs text-center mt-6">
             Trouble signing in? Ask your GRM administrator.
           </Text>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

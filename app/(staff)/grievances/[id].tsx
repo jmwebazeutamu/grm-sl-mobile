@@ -39,7 +39,7 @@ export default function GrievanceDetail() {
         </View>
       ) : (
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1"
         >
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>

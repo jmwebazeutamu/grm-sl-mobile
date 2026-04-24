@@ -27,6 +27,10 @@ interface Props<T extends Item> {
   /** When true, "— Not specified —" is offered as a null option. */
   clearable?: boolean;
   error?: string;
+  /** 'dark' (default) renders a translucent-white trigger for use on
+   *  the navy submit form. 'light' renders a white bordered trigger
+   *  with navy text for use on light surfaces (modals, white cards). */
+  variant?: 'dark' | 'light';
 }
 
 // Spec palette for the popover surface. Intentionally hard-coded — the
@@ -59,7 +63,9 @@ function DropdownField<T extends Item>({
   disabled,
   clearable = true,
   error,
+  variant = 'dark',
 }: Props<T>) {
+  const isLight = variant === 'light';
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   // Once mounted, keep the popover mounted for the life of the field so
@@ -127,20 +133,32 @@ function DropdownField<T extends Item>({
     outputRange: ['0deg', '180deg'],
   });
 
-  const borderClass =
-    error
-      ? 'border-red-400'
-      : open
-        ? '' // amber applied via inline style below
-        : disabled
-          ? 'border-white/10'
-          : 'border-white/20';
+  // Light variant: white card on a light modal surface; Dark variant:
+  // translucent white over the navy submit form.
+  const borderClass = isLight
+    ? (error
+        ? 'border-red-400'
+        : open
+          ? ''
+          : disabled
+            ? 'border-border'
+            : 'border-border')
+    : (error
+        ? 'border-red-400'
+        : open
+          ? ''
+          : disabled
+            ? 'border-white/10'
+            : 'border-white/20');
 
-  const triggerBg = error
-    ? 'bg-white/10'
-    : disabled
-      ? 'bg-white/5'
-      : 'bg-white/10';
+  const triggerBg = isLight
+    ? (disabled ? 'bg-gray-50' : 'bg-white')
+    : (disabled ? 'bg-white/5' : 'bg-white/10');
+
+  const labelClass = isLight ? 'text-muted' : 'text-white/60';
+  const valueClass = isLight
+    ? (selected ? 'text-navy' : 'text-muted')
+    : (selected ? 'text-white' : 'text-white/40');
 
   return (
     <>
@@ -156,10 +174,10 @@ function DropdownField<T extends Item>({
           className={`rounded-xl px-4 py-3 border ${triggerBg} ${borderClass}`}
           style={open ? { borderColor: AMBER } : undefined}
         >
-          <Text className="text-white/60 text-xs uppercase tracking-wider">{label}</Text>
+          <Text className={`${labelClass} text-xs uppercase tracking-wider`}>{label}</Text>
           <View className="flex-row items-center justify-between mt-0.5">
             <Text
-              className={`flex-1 text-base ${selected ? 'text-white' : 'text-white/40'}`}
+              className={`flex-1 text-base ${valueClass}`}
               numberOfLines={1}
             >
               {selected ? selected.name : placeholder}

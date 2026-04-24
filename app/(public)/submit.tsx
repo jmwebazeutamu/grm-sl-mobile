@@ -212,7 +212,7 @@ export default function Submit() {
 
   return (
     <SafeAreaView className="flex-1 bg-navy">
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
         <View className="px-6 pt-2">
           <Pressable onPress={back} className="flex-row items-center gap-2 mb-4 py-2">
             <Ionicons name="chevron-back" size={20} color="#e8c97a" />

@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '@/components/Card';
+import { SelectSheet } from '@/components/SelectSheet';
 import {
   useAssignOfficer,
   useCategorize,
@@ -174,16 +175,18 @@ function CategorizeModal({
         />
       </View>
 
-      <Text className="text-muted text-xs uppercase tracking-wider mt-5 mb-2">
-        Implementing organisation
-      </Text>
-      <PickerList
-        loading={orgs.isLoading}
-        items={(orgs.data ?? []).map((o) => ({ id: o.id, name: o.acronym ?? o.name }))}
-        value={orgId}
-        onChange={setOrgId}
-        emptyText="No organisations available."
-      />
+      <View className="mt-5">
+        <SelectSheet
+          variant="light"
+          label="Implementing organisation"
+          placeholder="Pick one"
+          items={(orgs.data ?? []).map((o) => ({ id: o.id, name: o.acronym ?? o.name }))}
+          loading={orgs.isLoading}
+          value={orgId}
+          onChange={setOrgId}
+          clearable={false}
+        />
+      </View>
 
       <ConfirmBar
         disabled={!category || !orgId || categorize.isPending}
@@ -266,16 +269,18 @@ function ClassifyModal({
       <Text className="text-muted text-sm mt-3">
         Pick how this case is classified inside your organisation. Case work starts once this is set.
       </Text>
-      <Text className="text-muted text-xs uppercase tracking-wider mt-5 mb-2">
-        Sub-classification
-      </Text>
-      <PickerList
-        loading={list.isLoading}
-        items={list.data ?? []}
-        value={pickedId}
-        onChange={setPickedId}
-        emptyText="Your organisation has no sub-classifications configured."
-      />
+      <View className="mt-5">
+        <SelectSheet
+          variant="light"
+          label="Sub-classification"
+          placeholder="Pick one"
+          items={list.data ?? []}
+          loading={list.isLoading}
+          value={pickedId}
+          onChange={setPickedId}
+          clearable={false}
+        />
+      </View>
 
       <ConfirmBar
         disabled={!pickedId || classify.isPending}
@@ -329,15 +334,18 @@ function AssignModal({
       <Text className="text-muted text-sm mt-3">
         Pick the officer responsible for this case. They will see it in their list and receive updates.
       </Text>
-      <Text className="text-muted text-xs uppercase tracking-wider mt-5 mb-2">Officers</Text>
-      <PickerList
-        loading={officers.isLoading}
-        items={officers.data ?? []}
-        value={pickedId}
-        onChange={setPickedId}
-        searchable
-        emptyText="No officers are available in this organisation."
-      />
+      <View className="mt-5">
+        <SelectSheet
+          variant="light"
+          label="Officer"
+          placeholder="Pick one"
+          items={officers.data ?? []}
+          loading={officers.isLoading}
+          value={pickedId}
+          onChange={setPickedId}
+          clearable={false}
+        />
+      </View>
 
       <ConfirmBar
         disabled={!pickedId || pickedId === currentOfficerId || assign.isPending}
@@ -377,70 +385,6 @@ function FullScreenModal({
         <View className="flex-1 px-5">{children}</View>
       </SafeAreaView>
     </Modal>
-  );
-}
-
-function PickerList({
-  items,
-  loading,
-  value,
-  onChange,
-  emptyText,
-  searchable = false,
-}: {
-  items: { id: number; name: string }[];
-  loading?: boolean;
-  value: number | null;
-  onChange: (id: number) => void;
-  emptyText: string;
-  searchable?: boolean;
-}) {
-  const [q, setQ] = useState('');
-  const filtered = q.trim()
-    ? items.filter((i) => i.name.toLowerCase().includes(q.toLowerCase()))
-    : items;
-
-  return (
-    <View className="flex-1 border border-border rounded-xl overflow-hidden bg-white">
-      {searchable && items.length > 10 ? (
-        <View className="px-3 py-2 border-b border-border flex-row items-center gap-2">
-          <Ionicons name="search" size={16} color="#64748b" />
-          <TextInput
-            value={q}
-            onChangeText={setQ}
-            placeholder="Search"
-            placeholderTextColor="#94a3b8"
-            className="flex-1 text-navy text-sm py-1"
-          />
-        </View>
-      ) : null}
-
-      {loading ? (
-        <View className="flex-1 items-center justify-center py-8">
-          <ActivityIndicator color="#0f2044" />
-        </View>
-      ) : items.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-4 py-8">
-          <Text className="text-muted text-sm text-center">{emptyText}</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(i) => i.id.toString()}
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => onChange(item.id)}
-              className={`px-4 py-3 border-b border-border flex-row items-center justify-between ${
-                value === item.id ? 'bg-gold-light/30' : ''
-              }`}
-            >
-              <Text className="text-navy flex-1 text-sm">{item.name}</Text>
-              {value === item.id ? <Ionicons name="checkmark" size={18} color="#22c55e" /> : null}
-            </Pressable>
-          )}
-        />
-      )}
-    </View>
   );
 }
 
