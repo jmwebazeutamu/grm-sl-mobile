@@ -85,14 +85,14 @@ export default function Login() {
 
             <View className="mt-6 gap-3">
               <View className="bg-white/10 rounded-xl border border-white/20 px-4 py-3">
-                <Text className="text-white/60 text-xs uppercase tracking-wider">Username</Text>
+                <Text className="text-white/60 text-xs uppercase tracking-wider">Username or email</Text>
                 <TextInput
                   value={username}
                   onChangeText={setUsername}
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="username"
-                  placeholder="e.g. mlebbie"
+                  placeholder="e.g. mlebbie or you@example.com"
                   placeholderTextColor="#94a3b8"
                   returnKeyType="next"
                   className="text-white text-base py-1"
