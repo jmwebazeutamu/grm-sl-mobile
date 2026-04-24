@@ -365,7 +365,9 @@ function FullScreenModal({
 }) {
   return (
     <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <SafeAreaView className="flex-1 bg-surface" edges={['top']}>
+      {/* edges=['top','bottom'] so the ConfirmBar at the foot of the
+          modal doesn't sit under the home indicator / gesture pill. */}
+      <SafeAreaView className="flex-1 bg-surface" edges={['top', 'bottom']}>
         <View className="bg-navy px-5 pt-4 pb-4 flex-row items-center justify-between">
           <Text className="text-white font-bold text-base flex-1" numberOfLines={1}>{title}</Text>
           <Pressable onPress={onClose} className="p-2 -mr-2">

@@ -14,6 +14,7 @@ import {
   View,
   type View as RNView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { performSignOut } from '@/lib/auth';
 import { useAuthStore, type AuthUser } from '@/stores/authStore';
 
@@ -380,6 +381,8 @@ function ConfirmSheet({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const insets = useSafeAreaInsets();
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -400,7 +403,7 @@ function ConfirmSheet({
       >
         <View
           onStartShouldSetResponder={() => true}
-          style={styles.sheet}
+          style={[styles.sheet, { paddingBottom: 24 + insets.bottom }]}
           accessibilityRole="alert"
           accessibilityLabel="Sign out of GRM confirmation"
         >

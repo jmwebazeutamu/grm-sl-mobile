@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Alert, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useBeginClosure,
   useCloseGrievance,
@@ -239,11 +240,15 @@ function ReviewModal({
       ? 'Reason (visible to the complainant — optional).'
       : 'Comment for the timeline — optional.';
   const confirmLabel = decision === 'accept' ? 'Accept' : 'Reject';
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={open} animationType="fade" transparent onRequestClose={onCancel}>
       <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-white rounded-t-3xl px-5 pt-5 pb-8">
+        <View
+          className="bg-white rounded-t-3xl px-5 pt-5"
+          style={{ paddingBottom: insets.bottom + 24 }}
+        >
           <Text className="text-navy font-bold text-lg">{title}</Text>
           <Text className="text-muted text-sm mt-1">{hint}</Text>
 
@@ -311,11 +316,15 @@ function ClosureModal({
   const confirmLabel = kind === 'escalate' ? 'Escalate and reopen' : 'Close grievance';
   const charsShort = Math.max(0, CLOSURE_MIN_CHARS - comment.trim().length);
   const canConfirm = kind !== null && comment.trim().length >= CLOSURE_MIN_CHARS && !pending;
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={open} animationType="fade" transparent onRequestClose={onCancel}>
       <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-white rounded-t-3xl px-5 pt-5 pb-8">
+        <View
+          className="bg-white rounded-t-3xl px-5 pt-5"
+          style={{ paddingBottom: insets.bottom + 24 }}
+        >
           <Text className="text-navy font-bold text-lg">Closure review</Text>
           <Text className="text-muted text-sm mt-1">
             Record the complainant's feedback and outcome. Closing is final; escalating sends the case back for more work.
@@ -419,11 +428,15 @@ function ResolveModal({
 }) {
   const charsShort = Math.max(0, CLOSURE_MIN_CHARS - comment.trim().length);
   const canConfirm = comment.trim().length >= CLOSURE_MIN_CHARS && !pending;
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={open} animationType="fade" transparent onRequestClose={onCancel}>
       <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-white rounded-t-3xl px-5 pt-5 pb-8">
+        <View
+          className="bg-white rounded-t-3xl px-5 pt-5"
+          style={{ paddingBottom: insets.bottom + 24 }}
+        >
           <Text className="text-navy font-bold text-lg">Mark as resolved</Text>
           <Text className="text-muted text-sm mt-1">
             Summarise what you did to resolve the case. The complainant will be
