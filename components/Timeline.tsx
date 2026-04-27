@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { shouldShowTimelineEntry } from '@/constants/timeline';
+
 export interface TimelineEntry {
   kind: string;
   occurred_at: string;
@@ -40,7 +42,12 @@ const TEXT = '#0d2a4d';
 const CANVAS_BG = '#f5f6f8';
 
 export function Timeline({ events }: { events: TimelineEntry[] }) {
-  if (events.length === 0) {
+  // Drop mechanical state-change noise (see constants/timeline.ts) before
+  // assembling the visible list — that way isFirst / isLast / row keys all
+  // line up with what the user actually sees.
+  const visible = events.filter(shouldShowTimelineEntry);
+
+  if (visible.length === 0) {
     return (
       <View style={styles.canvas}>
         <Text style={styles.empty}>No timeline entries yet.</Text>
@@ -48,7 +55,7 @@ export function Timeline({ events }: { events: TimelineEntry[] }) {
     );
   }
 
-  const mapped = events.map((e) => ({ entry: e, type: classify(e) }));
+  const mapped = visible.map((e) => ({ entry: e, type: classify(e) }));
 
   return (
     <View style={styles.canvas}>
