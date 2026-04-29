@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 
 const baseURL: string =
   (Constants.expoConfig?.extra?.apiBaseUrl as string | undefined) ??
-  'https://grm-sl.quasar.ug/api/v1/mobile';
+  'https://grm.anticorruption.gov.sl/api/v1/mobile';
 
 export const api = axios.create({
   baseURL,
